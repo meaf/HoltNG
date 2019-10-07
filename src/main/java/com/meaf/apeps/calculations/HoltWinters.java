@@ -1,79 +1,128 @@
 package com.meaf.apeps.calculations;
 
-public class HoltWinters implements Forecasting{
+import java.util.Arrays;
 
-    double[] Lt, Tt, Stt, Fc, ForecastForErr, Err, ErrPerc;
+public class HoltWinters {
 
-    public static void main(String[] args) {
-        int[] stats = new int[]{
-                17986229, 23571965, 25537589, 24630951, 24429696, 26116377, 27931501, 25914893, 24904130, 22360354, 23825299, 22241744, 21149853, 23770186, 29608386, 28588548, 29712036, 31191793, 28311730, 27438262, 26166319, 25916207, 23168086, 27707909, 25379305, 27823570, 28518039, 33971886, 31577081, 29328611, 34312920, 31364478, 29046432, 27244171, 24353446, 25447525, 24255101, 22391876, 27902911, 24102028, 24939643, 25401741, 22817314, 23554471, 21219769, 21144903, 19185427, 20507490, 16116508, 20363081
-        };
+  double[]
+    S,
+    Lt, //экспоненциально сглаженный ряд
+    Tt, //значение тренда
+    Sts, // коэффициент сезонности предыдущего периода;
+    Fc, // Прогноз по методу Хольта
+    FcEstimated, // Проноз для оценки модели
+    ErrorPerc, // Ошибка модели
+    Err; //Отклонение ошибки модели от прогнозной модели
 
-        new HoltWinters().forecast(stats, 0.5, 0.5, 0.5, 12, 10, true);
 
-    }
+  public static void main(String[] args) {
 
-    public double[] forecast(int[] y, double alpha, double beta,
-                             double gamma, int period, int m, boolean debug) {
+    double[] stats = new double[]{
+      17986229, 23571965, 25537589, 24630951, 24429696, 26116377, 27931501, 25914893, 24904130,
+      22360354, 23825299, 22241744, 21149853, 23770186, 29608386, 28588548, 29712036, 31191793,
+      28311730, 27438262, 26166319, 25916207, 23168086, 27707909, 25379305, 27823570, 28518039,
+      33971886, 31577081, 29328611, 34312920, 31364478, 29046432, 27244171, 24353446, 25447525,
+      24255101, 22391876, 27902911, 24102028, 24939643, 25401741, 22817314, 23554471, 21219769,
+      21144903, 19185427, 20507490, 16116508, 20363081
+    };
 
-        if (y == null) {
-            return null;
+    class Result implements Comparable {
+      public Result(double a, double b, double c, double accuracy) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.accuracy = accuracy;
+      }
+
+      double a, b, c;
+      double accuracy;
+
+      @Override
+      public int compareTo(Object o) {
+        if (o instanceof Result) {
+          if (accuracy > ((Result) o).accuracy) {
+            return 1;
+          }
         }
-
-        int seasons = y.length / period;
-        double a0 = calculateInitialLevel(y, period);
-        double b0 = calculateInitialTrend(y, period);
-        double[] initialSeasonalIndices = calculateSeasonalIndices(y, period, seasons);
-
-        double[] forecast = calculateHoltWinters(y, a0, b0, alpha, beta, gamma,
-                initialSeasonalIndices, period, m, debug);
-
-        if (debug) {
-            printArray("Forecast", forecast);
+        if (accuracy < ((Result) o).accuracy) {
+          return -1;
         }
-
-        return forecast;
-    }
-    private static double[] calculateHoltWinters(int[] y, double a0, double b0, double alpha,
-                                                 double beta, double gamma, double[] initialSeasonalIndices, int period, int m, boolean debug) {
-
-        double[] St = new double[y.length];
-        double[] Bt = new double[y.length];
-        double[] It = new double[y.length];
-        double[] Ft = new double[y.length + m];
-
-
-        return Ft;
+        return 0;
+      }
     }
 
-    private static double calculateInitialLevel(int[] y, int period) {
+    Result result = new Result(-1, -1, -1, 100);
 
-        return y[0];
-    }
-
-    private static double calculateInitialTrend(int[] y, int period){
-
-        double sum = 0;
-
-        for (int i = 0; i < period; i++) {
-            sum += (y[period + i] - y[i]);
+    for (double a = 0; a < 1; a += 0.05) {
+      for (double b = 0; b < 1; b += 0.05) {
+        for (double c = 0; c < 1; c += 0.05) {
+          double newAcc = new HoltWinters().forecast(stats, a, b, c, 12, 10);
+          if (result.accuracy > newAcc) {
+            result.accuracy = newAcc;
+            result.a = a;
+            result.b = b;
+            result.c = c;
+          }
         }
-
-        return sum / (period * period);
+      }
     }
 
-    private static double[] calculateSeasonalIndices(int[] y, int period, int seasons){
+    System.out.println("done");
 
-        double[] seasonalAverage = new double[seasons];
-        double[] seasonalIndices = new double[period];
+  }
 
-        double[] averagedObservations = new double[y.length];
+  public double forecast(double[] y,
+    double alpha,
+    double beta,
+    double gamma,
+    int period,
+    int forecastLen) {
 
+    S = y;
+    initValues(forecastLen);
 
-        return seasonalIndices;
+    for (int i = 1; i < S.length; i++) {
+      Lt[i] = (alpha * S[i] / getSeasonalK(i, forecastLen)) + (1 - alpha) * (Lt[i - 1] + Tt[i - 1]);
+      Tt[i] = beta * (Lt[i] - Lt[i - 1]) + (1 - beta) * Tt[i - 1];
+      Sts[i] =
+        i < forecastLen ? 1 : gamma * (S[i] / Lt[i]) + (1 - gamma) * getSeasonalK(i, forecastLen);
+
+      FcEstimated[i] = (Lt[i - 1] + Tt[i - 1]) * getSeasonalK(i, forecastLen);
+      Err[i] = S[i] - FcEstimated[i];
+      ErrorPerc[i] = (Err[i] * Err[i]) / (S[i] * S[i]);
+
     }
 
-    private static void printArray(String description, double[] data){
-
+    for (int i = S.length; i < S.length + forecastLen; i++) {
+      int p = i - S.length + 1;
+      Fc[p - 1] = (Lt[i - 1] + Tt[i - 1] * p) * Sts[i - period];
     }
+    return Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
+  }
+
+  private double getSeasonalK(int i, int forecastLen) {
+    return i < forecastLen ? 1 : Sts[i - forecastLen];
+  }
+
+  private void initValues(int forecastLen) {
+    int resultedLen = S.length + forecastLen;
+    Fc = new double[forecastLen];
+
+    Lt = new double[resultedLen];
+    Tt = new double[resultedLen];
+    Sts = new double[resultedLen];
+    Err = new double[resultedLen];
+    FcEstimated = new double[resultedLen];
+    ErrorPerc = new double[resultedLen];
+
+    Lt[0] = S[0];
+    Tt[0] = 0;
+    Sts[0] = 1;
+    Fc[0] = 0;
+    Err[0] = 0;
+    FcEstimated[0] = Lt[0];
+    ErrorPerc[0] = 0;
+
+  }
+
 }
