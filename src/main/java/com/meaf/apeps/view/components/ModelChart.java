@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BasicLine extends AbstractVaadinChartExample {
+public class ModelChart extends AbstractVaadinChartExample {
 
   private static DecimalFormat df = new DecimalFormat("#.##");
 
@@ -19,7 +19,7 @@ public class BasicLine extends AbstractVaadinChartExample {
   List<Double> smoothed = new ArrayList<>();
   List<Double> model = new ArrayList<>();
 
-  public BasicLine(HoltWinters method) {
+  public ModelChart(HoltWinters method) {
     super();
     if(method == null)
       return;
@@ -40,22 +40,14 @@ public class BasicLine extends AbstractVaadinChartExample {
     chart.setWidth("100%");
 
     Configuration configuration = chart.getConfiguration();
-    configuration.getChart().setType(ChartType.LINE);
+    configuration.getChart().setType(ChartType.SPLINE);
     configuration.getChart().setMarginRight(130);
     configuration.getChart().setMarginBottom(25);
     configuration.getChart().setZoomType(ZoomType.X);
 
     configuration.getTitle().setText("Resulting chart");
-//    configuration.getSubTitle().setText("Source: WorldClimate.com");
-
-//    XAxis xAxis = configuration.getxAxis();
-//    xAxis.setMin(0);
-//    xAxis.setMax(70);
 
     YAxis yAxis = configuration.getyAxis();
-//    yAxis.setMin(-5d);
-//    yAxis.setTitle(new AxisTitle("Temperature (°C)"));
-//    yAxis.getTitle().setAlign(VerticalAlign.MIDDLE);
 
     configuration
         .getTooltip()
@@ -70,8 +62,6 @@ public class BasicLine extends AbstractVaadinChartExample {
     legend.setLayout(LayoutDirection.VERTICAL);
     legend.setAlign(HorizontalAlign.RIGHT);
     legend.setVerticalAlign(VerticalAlign.TOP);
-//    legend.setX(-10d);
-//    legend.setY(100d);
     legend.setBorderWidth(0);
 
     ListSeries input = new ListSeries();

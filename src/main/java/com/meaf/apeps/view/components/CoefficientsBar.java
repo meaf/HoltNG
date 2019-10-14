@@ -5,13 +5,14 @@ import com.vaadin.ui.TextField;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 
 import javax.validation.constraints.NotNull;
-import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
 public class CoefficientsBar extends MHorizontalLayout {
   private TextField tfAlpha;
   private TextField tfBeta;
   private TextField tfGamma;
+  private TextField tfPeriod;
+  private TextField tfFC;
 
   private static DecimalFormat df = new DecimalFormat("#.##");
 
@@ -21,24 +22,16 @@ public class CoefficientsBar extends MHorizontalLayout {
 
   public CoefficientsBar(Model model) {
     super();
-    this.tfAlpha = new TextField("alpha", defEmpty(model.getAlpha()));
-    this.tfBeta = new TextField("beta", defEmpty(model.getBeta()));
-    this.tfGamma = new TextField("gamma", defEmpty(model.getGamma()));
-    this.add(tfAlpha, tfBeta, tfGamma);
-  }
-
-  private String defEmpty(BigDecimal k){
-    return k == null ? "" : k.toString();
+    this.tfAlpha = new TextField("Alpha", defEmpty(model.getAlpha()));
+    this.tfBeta = new TextField("Beta", defEmpty(model.getBeta()));
+    this.tfGamma = new TextField("Gamma", defEmpty(model.getGamma()));
+    this.tfPeriod = new TextField("Period", defEmpty(model.getPeriod()));
+    this.tfFC = new TextField("Forecast points", "3");
+    this.add(tfAlpha, tfBeta, tfGamma, tfPeriod, tfFC);
   }
 
   public Double getAlpha() {
     return nullableDouble(tfAlpha.getValue());
-  }
-
-  private Double nullableDouble(String value) {
-    return (value == null || "".equals(value))
-        ? null
-        : Double.parseDouble(value);
   }
 
   public Double getBeta() {
@@ -47,6 +40,14 @@ public class CoefficientsBar extends MHorizontalLayout {
 
   public Double getGamma() {
     return nullableDouble(tfGamma.getValue());
+  }
+
+  public Integer getPeriod() {
+    return nullableInteger(tfPeriod.getValue());
+  }
+
+  public Integer getForecastPoints() {
+    return nullableInteger(tfFC.getValue());
   }
 
   public void setAlpha(@NotNull Double alpha) {
@@ -60,4 +61,21 @@ public class CoefficientsBar extends MHorizontalLayout {
   public void setGamma(@NotNull Double gamma) {
     this.tfGamma.setValue(df.format(gamma));
   }
+
+  private Double nullableDouble(String value) {
+    return (value == null || "".equals(value))
+        ? null
+        : Double.parseDouble(value);
+  }
+
+  private Integer nullableInteger(String value) {
+    return (value == null || "".equals(value))
+        ? null
+        : Integer.parseInt(value);
+  }
+
+  private String defEmpty(Number k){
+    return k == null ? "" : k.toString();
+  }
+
 }

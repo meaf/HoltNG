@@ -1,6 +1,5 @@
 package com.meaf.apeps.calculations;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,11 +15,15 @@ public class HoltWinters {
       Fc, // Прогноз по методу Хольта
       FcEstimated, // Проноз для оценки модели
       ErrorPerc, // Ошибка модели
+      ErrorMSE, // среднеквадратическая ошибка
+      ErrorMAE, // абсолютная ошибка
       Err; //Отклонение ошибки модели от прогнозной модели
 
-  private double mse = 100;  //среднеквадратическая ошибка модели
+  private double msePerc = -1; //среднеквадратическая ошибка модели(%)
+  private double mseAvg = -1;  //среднеквадратическая ошибка модели
+  private double maeAvg = -1;  //средняя абсолютная ошибка модели
 
-  public void calculate(double[] stats, Double alpha, Double betta, Double gamma, double period, double forecastLen){
+  public void calculate(double[] stats, Double alpha, Double betta, Double gamma, int period, int forecastLen){
     double aLowerLimit = alpha == null ? 0 : alpha;
     double aUpperLimit = alpha == null ? 1 : alpha;
 
@@ -36,22 +39,26 @@ public class HoltWinters {
     double optimalB = 0;
     double optimalC = 0;
     double optimalMSE = Double.MAX_VALUE;
+    double optimalMAE = Double.MAX_VALUE;
+    double optimalMSEPerc = Double.MAX_VALUE;
 
     for (double a = aLowerLimit; a <= aUpperLimit; a += step) {
       for (double b = bLowerLimit; b <= bUpperLimit; b += step) {
         for (double c = cLowerLimit; c <= cUpperLimit; c += step) {
-          forecast(stats, a, b, c, 12, 10);
-          double newMSE = mse;
+          forecast(stats, a, b, c, period, forecastLen);
+          double newMSE = mseAvg;
           if (optimalMSE > newMSE) {
             optimalA = a;
             optimalB = b;
             optimalC = c;
-            optimalMSE = newMSE;
+            optimalMAE = maeAvg;
+            optimalMSE = mseAvg;
+            optimalMSEPerc = msePerc;
           }
         }
       }
     }
-    optimalResult = new Result(optimalA, optimalB, optimalC, optimalMSE);
+    optimalResult = new Result(optimalA, optimalB, optimalC, optimalMAE, optimalMSE, optimalMSEPerc);
   }
 
   public Result getOptimalResult() {
@@ -88,7 +95,7 @@ public class HoltWinters {
     for (int i = S.length; i < S.length + forecastLen; i++)
       calculateForecastStep(period, i);
 
-    calculateMSE();
+    calculateError();
   }
 
   private void initValues(int forecastLen) {
@@ -101,6 +108,8 @@ public class HoltWinters {
     Err = new double[S.length];
     FcEstimated = new double[S.length];
     ErrorPerc = new double[S.length];
+    ErrorMSE = new double[S.length];
+    ErrorMAE = new double[S.length];
 
     Lt[0] = S[0];
     Tt[0] = 0;
@@ -119,7 +128,9 @@ public class HoltWinters {
 
     FcEstimated[i] = (Lt[i - 1] + Tt[i - 1]) * getSeasonalK(i, forecastLen);
     Err[i] = S[i] - FcEstimated[i];
-    ErrorPerc[i] = (Err[i] * Err[i]) / (S[i] * S[i]);
+    ErrorMAE[i] = Math.abs(Err[i]);
+    ErrorMSE[i] = (Err[i] * Err[i]);
+    ErrorPerc[i] = ErrorMSE[i] / (S[i] * S[i]);
   }
 
   private void calculateForecastStep(int period, int i) {
@@ -132,20 +143,25 @@ public class HoltWinters {
     return i < forecastLen ? 1 : Sts[i - forecastLen];
   }
 
-  private void calculateMSE(){
-    this.mse = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
+  private void calculateError(){
+    this.maeAvg = Arrays.stream(ErrorMAE).reduce(Double::sum).orElse(-1) / S.length;
+    this.mseAvg = Arrays.stream(ErrorMSE).reduce(Double::sum).orElse(-1) / S.length;
+    this.msePerc = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
   }
 
   public static class Result {
-    public Result(double alpha, double beta, double gamma, double error) {
+    public Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
       this.alpha = alpha; //коэффициент сглаживания ряда
       this.beta = beta; //коэффициент сглаживания тренда
       this.gamma = gamma; //коэффициент сглаживания сезонности
-      this.mse = error;
+      this.mae = mae;
+      this.mse = mse;
+      this.msePerc = msePerc;
+      this.rmse = Math.sqrt(mse);
     }
 
     final double alpha, beta, gamma;
-    final double mse;
+    final double mae, mse, rmse, msePerc;
 
     public double getAlpha() {
       return alpha;
@@ -161,6 +177,18 @@ public class HoltWinters {
 
     public double getMse() {
       return mse;
+    }
+
+    public double getMae() {
+      return mae;
+    }
+
+    public double getRmse() {
+      return rmse;
+    }
+
+    public double getMsePerc() {
+      return msePerc;
     }
   }
 

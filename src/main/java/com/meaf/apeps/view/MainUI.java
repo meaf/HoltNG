@@ -5,12 +5,13 @@ import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
 import com.meaf.apeps.view.beans.SessionBean;
-import com.meaf.apeps.view.components.BasicLine;
+import com.meaf.apeps.view.components.ModelChart;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
-import com.vaadin.annotations.Widgetset;
+import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.shared.Position;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.*;
 
@@ -45,25 +46,43 @@ public class MainUI extends UI {
       .withWidth(100, Unit.PERCENTAGE)
       .withHeight(100, Unit.PERCENTAGE);
   private CoefficientsBar lhCoefficients;
+  private TextField tfMSEPerc = new TextField();
+  private TextField tfRMSE = new TextField();
   private TextField tfMSE = new TextField();
+  private TextField tfMAE = new TextField();
   MHorizontalLayout chartWrapper = new MHorizontalLayout();
 
   @Override
   protected void init(VaadinRequest request) {
-
     //    showLoginPrompt();
     initFakeData();
 
-    lhCoefficients = new CoefficientsBar(modelBean.getModel());
-    tfMSE.setPlaceholder("Press calculate");
-    tfMSE.setEnabled(false);
-
     Button btnCalculate = createCalculateButton();
     Button btnSaveResults = createSaveButton();
-    MHorizontalLayout lhErrorBar = new MHorizontalLayout(btnCalculate, tfMSE, btnSaveResults);
+
+    lhCoefficients = new CoefficientsBar(modelBean.getModel());
+    lhCoefficients.add(btnCalculate);
+    lhCoefficients.add(btnSaveResults);
+    lhCoefficients.setComponentAlignment(btnCalculate, Alignment.BOTTOM_LEFT);
+    lhCoefficients.setComponentAlignment(btnSaveResults, Alignment.BOTTOM_LEFT);
+
+    tfMSE.setCaption("MSE");
+    tfMSE.setEnabled(false);
+
+    tfRMSE.setCaption("RMSE");
+    tfRMSE.setEnabled(false);
+
+    tfMAE.setPlaceholder("Press calculate");
+    tfMAE.setCaption("MAE");
+    tfMAE.setEnabled(false);
+
+    tfMSEPerc.setCaption("MSE, %");
+    tfMSEPerc.setEnabled(false);
+
+    MHorizontalLayout lhErrorBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE);
     lhErrorBar.setCaption("Average node MSE");
 
-    BasicLine lineChart = new BasicLine(method);
+    ModelChart lineChart = new ModelChart(method);
     chartWrapper.add(lineChart);
 
     MVerticalLayout calculations = new MVerticalLayout(
@@ -94,7 +113,11 @@ public class MainUI extends UI {
     return new Button("Calculate", e -> {
       HoltWinters.Result result = calculate();
 
+      tfMSEPerc.setValue(String.valueOf(result.getMsePerc()));
+      tfRMSE.setValue(String.valueOf(result.getRmse()));
       tfMSE.setValue(String.valueOf(result.getMse()));
+      tfMAE.setValue(String.valueOf(result.getMae()));
+
       lhCoefficients.setAlpha(result.getAlpha());
       lhCoefficients.setBeta(result.getBeta());
       lhCoefficients.setGamma(result.getGamma());
@@ -111,6 +134,12 @@ public class MainUI extends UI {
       modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
       modelBean.getModel().setMse(new BigDecimal(result.getMse()));
       modelBean.saveModel();
+
+      Notification notification=new Notification("Success",
+          "Model params are saved");
+      notification.setPosition(Position.TOP_RIGHT);
+      notification.setStyleName("");
+      notification.show(Page.getCurrent());
     });
   }
 
@@ -124,8 +153,8 @@ public class MainUI extends UI {
         lhCoefficients.getAlpha(),
         lhCoefficients.getBeta(),
         lhCoefficients.getGamma(),
-        12,
-        2);
+        lhCoefficients.getPeriod(),
+        lhCoefficients.getForecastPoints());
 
     redrawChart();
     return method.getOptimalResult();
@@ -152,9 +181,9 @@ public class MainUI extends UI {
     entriesGrid.setRows(modelBean.getEntries());
   }
 
-  private void redrawChart(){
+  private void redrawChart() {
     this.chartWrapper.removeAllComponents();
-    BasicLine components = new BasicLine(method);
+    ModelChart components = new ModelChart(method);
     components.setSizeFull();
     this.chartWrapper.add(components).setSizeFull();
   }
