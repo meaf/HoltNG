@@ -5,7 +5,7 @@ import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
 import com.meaf.apeps.view.beans.SessionBean;
-import com.meaf.apeps.view.components.CoefficientsStripe;
+import com.meaf.apeps.view.components.CoefficientsBar;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
 import com.vaadin.server.VaadinRequest;
@@ -19,6 +19,7 @@ import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 import org.vaadin.viritin.layouts.MVerticalLayout;
 
+import java.math.BigDecimal;
 import java.util.stream.DoubleStream;
 
 @Title("HoltNG")
@@ -39,7 +40,8 @@ public class MainUI extends UI {
       .withProperties("date", "value")
       .withColumnHeaders("date", "value")
       .withWidth(20, Unit.PERCENTAGE);
-  private CoefficientsStripe coefficients;
+  private CoefficientsBar lhCoefficients;
+  TextField tfMSE = new TextField();
 
   @Override
   protected void init(VaadinRequest request) {
@@ -47,44 +49,69 @@ public class MainUI extends UI {
     //    showLoginPrompt();
     initFakeData();
 
-    DisclosurePanel aboutBox = new DisclosurePanel("Abut model", new RichText("Hello"));
+    lhCoefficients = new CoefficientsBar(modelBean.getModel());
+    tfMSE.setPlaceholder("Press calculate");
+    tfMSE.setEnabled(false);
 
-    coefficients = new CoefficientsStripe(modelBean.getModel());
+    Button btnCalculate = createCalculateButton();
+    Button btnSaveResults = createSaveButton();
+    MHorizontalLayout lhErrorBar = new MHorizontalLayout(btnCalculate, tfMSE, btnSaveResults);
+    lhErrorBar.setCaption("Average node MSE");
 
-    TextField accuraccy = new TextField("Accuraccy", "0");
-    accuraccy.setReadOnly(true);
-
-    Button btnCalculate = new Button("Calculate", e -> {
-      HoltWinters.Result result = calculate();
-
-      accuraccy.setValue(String.valueOf(result.getMse()));
-      coefficients.setAlpha(result.getAlpha());
-      coefficients.setBeta(result.getBeta());
-      coefficients.setGamma(result.getGamma());
-    });
 
     MVerticalLayout calculations = new MVerticalLayout(
-        coefficients,
-        new Label("CAHRTS GONNA BE HERE"),
-        accuraccy,
-        btnCalculate
+        lhCoefficients,
+        getCharts(),
+        lhErrorBar
     );
-
-    calculations.setWidth(60, Unit.PERCENTAGE);
 
     MHorizontalLayout data = new MHorizontalLayout(
         entriesGrid,
         calculations
     );
 
-
+    DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()));
     MVerticalLayout content = new MVerticalLayout(
         aboutBox,
         data
-    ).expand(entriesGrid);
+    );
 
     setContent(content);
     listData();
+  }
+
+  private Component getCharts() {
+
+
+
+
+    return new Label("CAHRTS GONNA BE HERE");
+  }
+
+  private Button createCalculateButton() {
+    return new Button("Calculate", e -> {
+      HoltWinters.Result result = calculate();
+
+      tfMSE.setValue(String.valueOf(result.getMse()));
+      lhCoefficients.setAlpha(result.getAlpha());
+      lhCoefficients.setBeta(result.getBeta());
+      lhCoefficients.setGamma(result.getGamma());
+    });
+  }
+
+  private Button createSaveButton() {
+    return new Button("Save results", e -> {
+      HoltWinters.Result result = calculate();
+
+      tfMSE.setValue(String.valueOf(result.getMse()));
+      modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
+      modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
+      modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
+      modelBean.getModel().setMse(new BigDecimal(result.getMse()));
+      modelBean.saveModel();
+
+
+    });
   }
 
   private HoltWinters.Result calculate() {
@@ -94,9 +121,9 @@ public class MainUI extends UI {
 
     HoltWinters method = new HoltWinters();
     method.calculate(inputData,
-        coefficients.getAlpha(),
-        coefficients.getBeta(),
-        coefficients.getGamma(),
+        lhCoefficients.getAlpha(),
+        lhCoefficients.getBeta(),
+        lhCoefficients.getGamma(),
         12,
         2);
 

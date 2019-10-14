@@ -24,17 +24,17 @@ public class Model extends ABaseEntity {
     @Column(name="userId")
     private Long userId;
 
-    @Column(name="alpha")
+    @Column(name="alpha", precision = 8, scale = 5)
     private BigDecimal alpha;
 
-    @Column(name="beta")
+    @Column(name="beta", precision = 8, scale = 5)
     private BigDecimal beta;
 
-    @Column(name="gamma")
+    @Column(name="gamma", precision = 8, scale = 5)
     private BigDecimal gamma;
 
-    @Column(name="accuracy")
-    private BigDecimal accuracy;
+    @Column(name="mse", precision = 8, scale = 5)
+    private BigDecimal mse;
 
     @Column(name="period")
     private Integer period;
@@ -103,12 +103,12 @@ public class Model extends ABaseEntity {
         this.gamma = gamma;
     }
 
-    public BigDecimal getAccuracy() {
-        return accuracy;
+    public BigDecimal getMse() {
+        return mse;
     }
 
-    public void setAccuracy(BigDecimal accuracy) {
-        this.accuracy = accuracy;
+    public void setMse(BigDecimal mse) {
+        this.mse = mse;
     }
 
   public Integer getPeriod() {

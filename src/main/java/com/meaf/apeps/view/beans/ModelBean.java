@@ -33,5 +33,9 @@ public class ModelBean {
     return entryRepository.findDataEntriesByModelId(model.getId());
   }
 
+  public void saveModel(){
+    modelRepository.saveAndFlush(model);
+  }
+
 
 }

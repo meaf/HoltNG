@@ -4,18 +4,22 @@ import com.meaf.apeps.model.entity.Model;
 import com.vaadin.ui.TextField;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 
-public class CoefficientsStripe extends MHorizontalLayout {
+public class CoefficientsBar extends MHorizontalLayout {
   private TextField tfAlpha;
   private TextField tfBeta;
   private TextField tfGamma;
 
-  public CoefficientsStripe() {
+  private static DecimalFormat df = new DecimalFormat("#.##");
+
+  public CoefficientsBar() {
     super();
   }
 
-  public CoefficientsStripe(Model model) {
+  public CoefficientsBar(Model model) {
     super();
     this.tfAlpha = new TextField("alpha", defEmpty(model.getAlpha()));
     this.tfBeta = new TextField("beta", defEmpty(model.getBeta()));
@@ -45,15 +49,15 @@ public class CoefficientsStripe extends MHorizontalLayout {
     return nullableDouble(tfGamma.getValue());
   }
 
-  public void setAlpha(Double alpha) {
-    this.tfAlpha.setValue(alpha.toString());
+  public void setAlpha(@NotNull Double alpha) {
+    this.tfAlpha.setValue(df.format(alpha));
   }
 
-  public void setBeta(Double beta) {
-    this.tfBeta.setValue(beta.toString());
+  public void setBeta(@NotNull Double beta) {
+    this.tfBeta.setValue(df.format(beta));
   }
 
-  public void setGamma(Double gamma) {
-    this.tfGamma.setValue(gamma.toString());
+  public void setGamma(@NotNull Double gamma) {
+    this.tfGamma.setValue(df.format(gamma));
   }
 }
