@@ -4,8 +4,9 @@ import java.util.Arrays;
 
 public class HoltWinters {
 
-  double[]
-      S,
+  private Result optimalResult;
+  private double[]
+      S,  // заданные значения
       Lt, //экспоненциально сглаженный ряд
       Tt, //значение тренда
       Sts, // коэффициент сезонности предыдущего периода;
@@ -14,82 +15,79 @@ public class HoltWinters {
       ErrorPerc, // Ошибка модели
       Err; //Отклонение ошибки модели от прогнозной модели
 
+  private double mse = 100;  //среднеквадратическая ошибка модели
 
-  public static void main(String[] args) {
+  public void calculate(double[] stats, Double alpha, Double betta, Double gamma, double period, double forecastLen){
+    double aLowerLimit = alpha == null ? 0 : alpha;
+    double aUpperLimit = alpha == null ? 1 : alpha;
 
-    double[] stats = new double[]{
-        17986229, 23571965, 25537589, 24630951, 24429696, 26116377, 27931501, 25914893, 24904130,
-        22360354, 23825299, 22241744, 21149853, 23770186, 29608386, 28588548, 29712036, 31191793,
-        28311730, 27438262, 26166319, 25916207, 23168086, 27707909, 25379305, 27823570, 28518039,
-        33971886, 31577081, 29328611, 34312920, 31364478, 29046432, 27244171, 24353446, 25447525,
-        24255101, 22391876, 27902911, 24102028, 24939643, 25401741, 22817314, 23554471, 21219769,
-        21144903, 19185427, 20507490, 16116508, 20363081
-    };
+    double bLowerLimit = betta == null ? 0 : betta;
+    double bUpperLimit = betta == null ? 1 : betta;
 
-    class Result implements Comparable {
-      public Result(double a, double b, double c, double accuracy) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
-        this.accuracy = accuracy;
-      }
+    double cLowerLimit = gamma == null ? 0 : gamma;
+    double cUpperLimit = gamma == null ? 1 : gamma;
 
-      double a, b, c;
-      double accuracy;
+    double step = 0.1;
 
-      @Override
-      public int compareTo(Object o) {
-        if (o instanceof Result) {
-          if (accuracy > ((Result) o).accuracy) {
-            return 1;
-          }
-        }
-        if (accuracy < ((Result) o).accuracy) {
-          return -1;
-        }
-        return 0;
-      }
-    }
+    double optimalA = 0;
+    double optimalB = 0;
+    double optimalC = 0;
+    double optimalMSE = Double.MAX_VALUE;
 
-    Result result = new Result(-1, -1, -1, 100);
-
-    for (double a = 0; a <= 1; a += 0.05) {
-      for (double b = 0; b <= 1; b += 0.05) {
-        for (double c = 0; c <= 1; c += 0.05) {
-          double newAcc = new HoltWinters().forecast(stats, a, b, c, 12, 10);
-          if (result.accuracy > newAcc) {
-            result.accuracy = newAcc;
-            result.a = a;
-            result.b = b;
-            result.c = c;
+    for (double a = aLowerLimit; a <= aUpperLimit; a += step) {
+      for (double b = bLowerLimit; b <= bUpperLimit; b += step) {
+        for (double c = cLowerLimit; c <= cUpperLimit; c += step) {
+          forecast(stats, a, b, c, 12, 10);
+          double newMSE = mse;
+          if (optimalMSE > newMSE) {
+            optimalA = a;
+            optimalB = b;
+            optimalC = c;
+            optimalMSE = newMSE;
           }
         }
       }
     }
-
-    System.out.println("done");
-
+    optimalResult = new Result(optimalA, optimalB, optimalC, optimalMSE);
   }
 
-  public double forecast(double[] y,
+  private void forecast(double[] inputArray,
                          double alpha,
                          double beta,
                          double gamma,
                          int period,
                          int forecastLen) {
 
-    S = y;
+    S = inputArray;
     initValues(forecastLen);
 
-    for (int i = 1; i < S.length; i++) {
+    for (int i = 1; i < S.length; i++)
       calculateStep(alpha, beta, gamma, forecastLen, i);
-    }
 
-    for (int i = S.length; i < S.length + forecastLen; i++) {
+    for (int i = S.length; i < S.length + forecastLen; i++)
       calculateForecastStep(period, i);
-    }
-    return Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
 
+    calculateMSE();
+  }
+
+  private void initValues(int forecastLen) {
+    int resultedLen = S.length + forecastLen;
+    Fc = new double[forecastLen];
+
+    Lt = new double[resultedLen];
+    Tt = new double[resultedLen];
+    Sts = new double[resultedLen];
+    Err = new double[resultedLen];
+    FcEstimated = new double[resultedLen];
+    ErrorPerc = new double[resultedLen];
+
+    Lt[0] = S[0];
+    Tt[0] = 0;
+    Sts[0] = 1;
+    Fc[0] = 0;
+    Err[0] = 0;
+    FcEstimated[0] = Lt[0];
+    ErrorPerc[0] = 0;
   }
 
   private void calculateStep(double alpha, double beta, double gamma, int forecastLen, int i) {
@@ -112,25 +110,39 @@ public class HoltWinters {
     return i < forecastLen ? 1 : Sts[i - forecastLen];
   }
 
-  private void initValues(int forecastLen) {
-    int resultedLen = S.length + forecastLen;
-    Fc = new double[forecastLen];
-
-    Lt = new double[resultedLen];
-    Tt = new double[resultedLen];
-    Sts = new double[resultedLen];
-    Err = new double[resultedLen];
-    FcEstimated = new double[resultedLen];
-    ErrorPerc = new double[resultedLen];
-
-    Lt[0] = S[0];
-    Tt[0] = 0;
-    Sts[0] = 1;
-    Fc[0] = 0;
-    Err[0] = 0;
-    FcEstimated[0] = Lt[0];
-    ErrorPerc[0] = 0;
-
+  private void calculateMSE(){
+    this.mse = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
   }
 
+  public static class Result {
+    public Result(double alpha, double beta, double gamma, double error) {
+      this.alpha = alpha;
+      this.beta = beta;
+      this.gamma = gamma;
+      this.mse = error;
+    }
+
+    final double alpha, beta, gamma;
+    final double mse;
+
+    public double getAlpha() {
+      return alpha;
+    }
+
+    public double getBeta() {
+      return beta;
+    }
+
+    public double getGamma() {
+      return gamma;
+    }
+
+    public double getMse() {
+      return mse;
+    }
+  }
+
+  public Result getOptimalResult() {
+    return optimalResult;
+  }
 }

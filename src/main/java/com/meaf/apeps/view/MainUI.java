@@ -54,7 +54,14 @@ public class MainUI extends UI {
     TextField accuraccy = new TextField("Accuraccy", "0");
     accuraccy.setReadOnly(true);
 
-    Button btnCalculate = new Button("Calculate", e -> accuraccy.setValue(String.valueOf(calculate())));
+    Button btnCalculate = new Button("Calculate", e -> {
+      HoltWinters.Result result = calculate();
+
+      accuraccy.setValue(String.valueOf(result.getMse()));
+      coefficients.setAlpha(result.getAlpha());
+      coefficients.setBeta(result.getBeta());
+      coefficients.setGamma(result.getGamma());
+    });
 
     MVerticalLayout calculations = new MVerticalLayout(
         coefficients,
@@ -80,19 +87,20 @@ public class MainUI extends UI {
     listData();
   }
 
-  private double calculate() {
+  private HoltWinters.Result calculate() {
     double[] inputData = modelBean.getEntries().stream()
         .flatMapToDouble(e -> DoubleStream.of(e.getValue().doubleValue()))
         .toArray();
 
-    double accuracy = new HoltWinters().forecast(inputData,
+    HoltWinters method = new HoltWinters();
+    method.calculate(inputData,
         coefficients.getAlpha(),
         coefficients.getBeta(),
         coefficients.getGamma(),
         12,
         2);
 
-    return accuracy;
+    return method.getOptimalResult();
 
   }
 

@@ -28,15 +28,32 @@ public class CoefficientsStripe extends MHorizontalLayout {
   }
 
   public Double getAlpha() {
-    return Double.parseDouble(tfAlpha.getValue());
+    return nullableDouble(tfAlpha.getValue());
+  }
+
+  private Double nullableDouble(String value) {
+    return (value == null || "".equals(value))
+        ? null
+        : Double.parseDouble(value);
   }
 
   public Double getBeta() {
-    return Double.parseDouble(tfBeta.getValue());
+    return nullableDouble(tfBeta.getValue());
   }
 
   public Double getGamma() {
-    return Double.parseDouble(tfGamma.getValue());
+    return nullableDouble(tfGamma.getValue());
   }
 
+  public void setAlpha(Double alpha) {
+    this.tfAlpha.setValue(alpha.toString());
+  }
+
+  public void setBeta(Double beta) {
+    this.tfBeta.setValue(beta.toString());
+  }
+
+  public void setGamma(Double gamma) {
+    this.tfGamma.setValue(gamma.toString());
+  }
 }
