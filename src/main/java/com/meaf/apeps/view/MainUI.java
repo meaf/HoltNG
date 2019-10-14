@@ -5,9 +5,11 @@ import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
 import com.meaf.apeps.view.beans.SessionBean;
+import com.meaf.apeps.view.components.BasicLine;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
+import com.vaadin.annotations.Widgetset;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.ui.*;
@@ -30,18 +32,21 @@ public class MainUI extends UI {
   private static final long serialVersionUID = 1L;
 
   @Autowired
-  SessionBean sessionBean;
+  private SessionBean sessionBean;
   @Autowired
-  ModelBean modelBean;
+  private ModelBean modelBean;
   @Autowired
-  ProjectBean projectBean;
+  private ProjectBean projectBean;
+  private HoltWinters method;
 
   private MGrid<DataEntry> entriesGrid = new MGrid<>(DataEntry.class)
       .withProperties("date", "value")
       .withColumnHeaders("date", "value")
-      .withWidth(20, Unit.PERCENTAGE);
+      .withWidth(100, Unit.PERCENTAGE)
+      .withHeight(100, Unit.PERCENTAGE);
   private CoefficientsBar lhCoefficients;
-  TextField tfMSE = new TextField();
+  private TextField tfMSE = new TextField();
+  MHorizontalLayout chartWrapper = new MHorizontalLayout();
 
   @Override
   protected void init(VaadinRequest request) {
@@ -58,17 +63,22 @@ public class MainUI extends UI {
     MHorizontalLayout lhErrorBar = new MHorizontalLayout(btnCalculate, tfMSE, btnSaveResults);
     lhErrorBar.setCaption("Average node MSE");
 
+    BasicLine lineChart = new BasicLine(method);
+    chartWrapper.add(lineChart);
 
     MVerticalLayout calculations = new MVerticalLayout(
         lhCoefficients,
-        getCharts(),
+        chartWrapper,
         lhErrorBar
-    );
+    ).withFullWidth();
 
     MHorizontalLayout data = new MHorizontalLayout(
         entriesGrid,
         calculations
-    );
+    ).withFullWidth();
+
+    data.setExpandRatio(entriesGrid, 1);
+    data.setExpandRatio(calculations, 4);
 
     DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()));
     MVerticalLayout content = new MVerticalLayout(
@@ -78,14 +88,6 @@ public class MainUI extends UI {
 
     setContent(content);
     listData();
-  }
-
-  private Component getCharts() {
-
-
-
-
-    return new Label("CAHRTS GONNA BE HERE");
   }
 
   private Button createCalculateButton() {
@@ -109,8 +111,6 @@ public class MainUI extends UI {
       modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
       modelBean.getModel().setMse(new BigDecimal(result.getMse()));
       modelBean.saveModel();
-
-
     });
   }
 
@@ -119,7 +119,7 @@ public class MainUI extends UI {
         .flatMapToDouble(e -> DoubleStream.of(e.getValue().doubleValue()))
         .toArray();
 
-    HoltWinters method = new HoltWinters();
+    method = new HoltWinters();
     method.calculate(inputData,
         lhCoefficients.getAlpha(),
         lhCoefficients.getBeta(),
@@ -127,8 +127,8 @@ public class MainUI extends UI {
         12,
         2);
 
+    redrawChart();
     return method.getOptimalResult();
-
   }
 
   private void initFakeData() {
@@ -152,4 +152,10 @@ public class MainUI extends UI {
     entriesGrid.setRows(modelBean.getEntries());
   }
 
+  private void redrawChart(){
+    this.chartWrapper.removeAllComponents();
+    BasicLine components = new BasicLine(method);
+    components.setSizeFull();
+    this.chartWrapper.add(components).setSizeFull();
+  }
 }

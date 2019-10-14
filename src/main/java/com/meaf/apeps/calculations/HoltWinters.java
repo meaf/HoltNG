@@ -1,6 +1,9 @@
 package com.meaf.apeps.calculations;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HoltWinters {
 
@@ -51,12 +54,30 @@ public class HoltWinters {
     optimalResult = new Result(optimalA, optimalB, optimalC, optimalMSE);
   }
 
+  public Result getOptimalResult() {
+    return optimalResult;
+  }
+
+  public List<Double> getInputData() {
+    return Arrays.stream(S).boxed().collect(Collectors.toList());
+  }
+
+  public List<Double> getSmoothedData() {
+    return Arrays.stream(Lt).boxed().collect(Collectors.toList());
+  }
+
+  public List<Double> getFcData() {
+    List<Double> result = Arrays.stream(FcEstimated).boxed().collect(Collectors.toList());
+    result.addAll(Arrays.stream(Fc).boxed().collect(Collectors.toList()));
+    return result;
+  }
+
   private void forecast(double[] inputArray,
-                         double alpha,
-                         double beta,
-                         double gamma,
-                         int period,
-                         int forecastLen) {
+                        double alpha,
+                        double beta,
+                        double gamma,
+                        int period,
+                        int forecastLen) {
 
     S = inputArray;
     initValues(forecastLen);
@@ -74,12 +95,12 @@ public class HoltWinters {
     int resultedLen = S.length + forecastLen;
     Fc = new double[forecastLen];
 
-    Lt = new double[resultedLen];
-    Tt = new double[resultedLen];
-    Sts = new double[resultedLen];
-    Err = new double[resultedLen];
-    FcEstimated = new double[resultedLen];
-    ErrorPerc = new double[resultedLen];
+    Lt = new double[S.length];
+    Tt = new double[S.length];
+    Sts = new double[S.length];
+    Err = new double[S.length];
+    FcEstimated = new double[S.length];
+    ErrorPerc = new double[S.length];
 
     Lt[0] = S[0];
     Tt[0] = 0;
@@ -103,7 +124,8 @@ public class HoltWinters {
 
   private void calculateForecastStep(int period, int i) {
     int p = i - S.length + 1;
-    Fc[p - 1] = (Lt[i - 1] + Tt[i - 1] * p) * Sts[i - period];
+    int lastSequenceValueInd = S.length - 1;
+    Fc[p - 1] = (Lt[lastSequenceValueInd] + Tt[lastSequenceValueInd] * p) * Sts[i - period];
   }
 
   private double getSeasonalK(int i, int forecastLen) {
@@ -116,9 +138,9 @@ public class HoltWinters {
 
   public static class Result {
     public Result(double alpha, double beta, double gamma, double error) {
-      this.alpha = alpha;
-      this.beta = beta;
-      this.gamma = gamma;
+      this.alpha = alpha; //коэффициент сглаживания ряда
+      this.beta = beta; //коэффициент сглаживания тренда
+      this.gamma = gamma; //коэффициент сглаживания сезонности
       this.mse = error;
     }
 
@@ -142,7 +164,4 @@ public class HoltWinters {
     }
   }
 
-  public Result getOptimalResult() {
-    return optimalResult;
-  }
 }
