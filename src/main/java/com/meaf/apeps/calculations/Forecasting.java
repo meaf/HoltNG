@@ -1,5 +1,11 @@
 package com.meaf.apeps.calculations;
 
+import java.util.List;
+
 public interface Forecasting {
-    public double[] forecast(int[] y, double alpha, double beta, double gamma, int period, int m, boolean debug);
+    void calculate(double[] stats, Double alpha, Double betta, Double gamma, int period, int forecastLen);
+    Result getOptimalResult();
+    List<Double> getInputData();
+    List<Double> getSmoothedData();
+    List<Double> getFcData();
 }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class HoltWinters {
+public class HoltWinters implements Forecasting {
 
   private Result optimalResult;
   private double[]
@@ -147,49 +147,6 @@ public class HoltWinters {
     this.maeAvg = Arrays.stream(ErrorMAE).reduce(Double::sum).orElse(-1) / S.length;
     this.mseAvg = Arrays.stream(ErrorMSE).reduce(Double::sum).orElse(-1) / S.length;
     this.msePerc = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
-  }
-
-  public static class Result {
-    public Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
-      this.alpha = alpha; //коэффициент сглаживания ряда
-      this.beta = beta; //коэффициент сглаживания тренда
-      this.gamma = gamma; //коэффициент сглаживания сезонности
-      this.mae = mae;
-      this.mse = mse;
-      this.msePerc = msePerc;
-      this.rmse = Math.sqrt(mse);
-    }
-
-    final double alpha, beta, gamma;
-    final double mae, mse, rmse, msePerc;
-
-    public double getAlpha() {
-      return alpha;
-    }
-
-    public double getBeta() {
-      return beta;
-    }
-
-    public double getGamma() {
-      return gamma;
-    }
-
-    public double getMse() {
-      return mse;
-    }
-
-    public double getMae() {
-      return mae;
-    }
-
-    public double getRmse() {
-      return rmse;
-    }
-
-    public double getMsePerc() {
-      return msePerc;
-    }
   }
 
 }

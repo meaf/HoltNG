@@ -1,5 +1,6 @@
 package com.meaf.apeps.view.components;
 
+import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.examples.AbstractVaadinChartExample;
@@ -19,7 +20,7 @@ public class ModelChart extends AbstractVaadinChartExample {
   List<Double> smoothed = new ArrayList<>();
   List<Double> model = new ArrayList<>();
 
-  public ModelChart(HoltWinters method) {
+  public ModelChart(Forecasting method) {
     super();
     if(method == null)
       return;

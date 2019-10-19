@@ -1,13 +1,13 @@
 package com.meaf.apeps.view;
 
 import com.meaf.apeps.view.beans.SessionBean;
-import com.meaf.apeps.view.content.ModelContent;
+import com.meaf.apeps.view.content.BaseContentHolder;
 import com.meaf.apeps.view.content.ViewRouter;
+import com.meaf.apeps.view.content.pages.ModelContent;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.LoginForm;
 import com.vaadin.ui.UI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +21,22 @@ public class MainUI extends UI {
   private static final long serialVersionUID = 1L;
 
   @Autowired
-  ModelContent modelContent;
+  private ModelContent modelContent;
   @Autowired
-  ViewRouter router;
+  private ViewRouter router;
   @Autowired
   private SessionBean sessionBean;
 
   @Override
   protected void init(VaadinRequest request) {
+    BaseContentHolder baseHolder = new BaseContentHolder();
+    router.setHolder(baseHolder);
     showLoginPrompt();
-    setContent(router.route());
+    defineView();
+  }
+
+  public void defineView() {
+    router.route();
   }
 
   private void showLoginPrompt() {

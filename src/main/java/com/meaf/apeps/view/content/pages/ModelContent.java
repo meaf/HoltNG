@@ -1,6 +1,8 @@
-package com.meaf.apeps.view.content;
+package com.meaf.apeps.view.content.pages;
 
+import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
+import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
@@ -22,13 +24,14 @@ import java.math.BigDecimal;
 import java.util.stream.DoubleStream;
 
 @Component
-public class ModelContent {
+public
+class ModelContent extends ABaseContent {
 
   @Autowired
   private ModelBean modelBean;
   @Autowired
   private ProjectBean projectBean;
-  private HoltWinters method;
+  private Forecasting method;
 
   private MGrid<DataEntry> entriesGrid = new MGrid<>(DataEntry.class)
       .withProperties("date", "value")
@@ -42,7 +45,8 @@ public class ModelContent {
   private TextField tfMAE = new TextField();
   MHorizontalLayout chartWrapper = new MHorizontalLayout();
 
-  public MVerticalLayout getModelContent() {
+  @Override
+  public com.vaadin.ui.Component getContent() {
     initFakeData();
 
     Button btnCalculate = createCalculateButton();
@@ -99,7 +103,7 @@ public class ModelContent {
 
   private Button createCalculateButton() {
     return new Button("Calculate", e -> {
-      HoltWinters.Result result = calculate();
+      Result result = calculate();
 
       tfMSEPerc.setValue(String.valueOf(result.getMsePerc()));
       tfRMSE.setValue(String.valueOf(result.getRmse()));
@@ -114,7 +118,7 @@ public class ModelContent {
 
   private Button createSaveButton() {
     return new Button("Save results", e -> {
-      HoltWinters.Result result = calculate();
+      Result result = calculate();
 
       tfMSE.setValue(String.valueOf(result.getMse()));
       modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
@@ -131,7 +135,7 @@ public class ModelContent {
     });
   }
 
-  private HoltWinters.Result calculate() {
+  private Result calculate() {
     double[] inputData = modelBean.getEntries().stream()
         .flatMapToDouble(e -> DoubleStream.of(e.getValue().doubleValue()))
         .toArray();
