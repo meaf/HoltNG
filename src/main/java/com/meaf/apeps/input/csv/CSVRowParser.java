@@ -3,11 +3,13 @@ package com.meaf.apeps.input.csv;
 import com.meaf.apeps.input.IWeatherParser;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
 class CSVRowParser implements IWeatherParser {
 
 // 0  - PeriodEnd

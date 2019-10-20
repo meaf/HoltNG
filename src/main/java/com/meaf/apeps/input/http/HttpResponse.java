@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import java.util.List;
 import java.util.Map;
 
-public class HttpResponse {
+class HttpResponse {
   private HttpStatus status;
   private Map<String, List<String>> headers;
   private String response;

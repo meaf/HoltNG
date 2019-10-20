@@ -40,5 +40,9 @@ public class ModelBean {
     modelRepository.saveAndFlush(model);
   }
 
+  public void mergeEntries(List<WeatherStateData> data) {
+    weatherStateRepository.saveAll(data);
+  }
+
 
 }

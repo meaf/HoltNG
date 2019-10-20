@@ -20,11 +20,13 @@ public class UploadInfoWindow extends Window implements
 
   private final ProgressBar progressBar = new ProgressBar();
   private final Button cancelButton;
+  private final Button showResults;
   private final CSVFileReciever csvReciever;
+  private List<WeatherStateData> groupedData;
 
-  public UploadInfoWindow(final Upload upload, final CSVFileReciever lineBreakCounter) {
+  public UploadInfoWindow(final Upload upload, final CSVFileReciever reciever) {
     super("Status");
-    this.csvReciever = lineBreakCounter;
+    this.csvReciever = reciever;
 
     addStyleName("upload-info");
 
@@ -44,6 +46,12 @@ public class UploadInfoWindow extends Window implements
     cancelButton.setVisible(false);
     cancelButton.setStyleName("small");
     stateLayout.addComponent(cancelButton);
+
+    showResults = new Button("Show results");
+    showResults.addClickListener(event -> upload.interruptUpload());
+    showResults.setVisible(false);
+    showResults.setStyleName("small");
+    stateLayout.addComponent(showResults);
 
     stateLayout.setCaption("Current state");
     state.setValue("Idle");
@@ -79,9 +87,13 @@ public class UploadInfoWindow extends Window implements
   }
 
   private void groupData() {
+    if(csvReciever.getLoadedRows().isEmpty()) {
+      state.setValue("No valid data found");
+      return;
+    }
     state.setValue("Grouping data...");
     progressBar.reset();
-    List<WeatherStateData> groupedData = WeatherAggregator.hourlyToDaily(csvReciever.parseRows(), WeatherAggregator.EDataSource.csv);
+    groupedData = WeatherAggregator.hourlyToDaily(csvReciever.parseRows(), WeatherAggregator.EDataSource.csv);
     result.setValue(String.format("%s (resulted in %s complete day(s))", csvReciever.getLoadedRows().size(), groupedData.size()));
     state.setValue("Finished!");
   }
@@ -119,6 +131,15 @@ public class UploadInfoWindow extends Window implements
     result.setValue(csvReciever.getLoadedRows().size()
         + " (counting interrupted at "
         + Math.round(100 * progressBar.getValue()) + "%)");
+  }
+
+  public void setShowResultsAction(Button.ClickListener listener){
+    showResults.addClickListener(listener);
+    showResults.setVisible(true);
+  }
+
+  public List<WeatherStateData> getResults() {
+    return groupedData;
   }
 }
 

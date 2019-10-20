@@ -6,10 +6,12 @@ import com.meaf.apeps.utils.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
 
+@Component
 class HttpResponseParser implements IWeatherParser {
   public List<WeatherStateData> parse(String responseStr) throws IllegalArgumentException {
     try {

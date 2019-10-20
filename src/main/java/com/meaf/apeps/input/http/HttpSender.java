@@ -7,8 +7,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpSender {
-  public static HttpResponse sendUpdateRequest() {
+class HttpSender {
+  static HttpResponse sendUpdateRequest() {
     HttpURLConnection con = null;
     try {
 

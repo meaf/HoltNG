@@ -4,6 +4,7 @@ import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.input.csv.CSVFileReciever;
+import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.view.beans.ModelBean;
@@ -22,11 +23,13 @@ import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 import org.vaadin.viritin.layouts.MVerticalLayout;
+import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
 import java.rmi.NoSuchObjectException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
 
@@ -36,6 +39,8 @@ class ModelContent extends ABaseContent {
 
   private final ModelBean modelBean;
   private final ProjectBean projectBean;
+  private final RequestHttpUpdate requestHttpUpdate;
+
   private Forecasting method;
 
   private MGrid<WeatherStateData> entriesGrid = new MGrid<>(WeatherStateData.class)
@@ -49,11 +54,12 @@ class ModelContent extends ABaseContent {
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
-  private boolean solarStats;
+  private boolean solarStats = true;
 
-  public ModelContent(ModelBean modelBean, ProjectBean projectBean) {
+  public ModelContent(ModelBean modelBean, ProjectBean projectBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
     this.projectBean = projectBean;
+    this.requestHttpUpdate = requestHttpUpdate;
   }
 
   @Override
@@ -99,12 +105,25 @@ class ModelContent extends ABaseContent {
         lhErrorBar
     ).withFullWidth();
 
-    MHorizontalLayout data = new MHorizontalLayout(
+    Upload uploadButton = createUploadButton();
+    Button updateButton = createUpdateButton();
+    MVerticalLayout dataTableOptions = new MVerticalLayout(
         entriesGrid,
+        uploadButton,
+        updateButton
+    ).withExpand(entriesGrid, 10)
+        .withExpand(updateButton, 1)
+        .withExpand(uploadButton, 1)
+        .withFullHeight();
+
+    dataTableOptions.setSizeFull();
+
+    MHorizontalLayout data = new MHorizontalLayout(
+        dataTableOptions,
         calculations
     ).withFullWidth();
 
-    data.setExpandRatio(entriesGrid, 1);
+    data.setExpandRatio(dataTableOptions, 1);
     data.setExpandRatio(calculations, 4);
 
     DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()));
@@ -112,13 +131,26 @@ class ModelContent extends ABaseContent {
         aboutBox,
         data
     );
-    addUploadBtn(content);
-    listData();
+    updateDataGrid();
     return content;
   }
 
-  private void addUploadBtn(MVerticalLayout content) {
-    CSVFileReciever fileReciever= new CSVFileReciever();
+  private Button createUpdateButton() {
+    Button updButton = new Button("Update");
+    updButton.addClickListener(e -> {
+      List<WeatherStateData> weatherStateDataList = requestHttpUpdate.requestUpdate();
+      if (weatherStateDataList == null) {
+        showErrorNotification("Http update error", "could not communicate to data sever");
+        return;
+      }
+      createNewDataWindow(updButton, weatherStateDataList);
+    });
+
+    return updButton;
+  }
+
+  private Upload createUploadButton() {
+    CSVFileReciever fileReciever = new CSVFileReciever();
 
     fileReciever.setDateScope(DateUtils.asSqlDate(new Date(107, Calendar.JANUARY, 2))); //TODO
 
@@ -129,21 +161,26 @@ class ModelContent extends ABaseContent {
     UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReciever);
 
     uploadBtn.addStartedListener(event -> {
+      if("".equals(event.getFilename()) || event.getContentLength() == 0)
+        return;
       fileReciever.reset();
       if (uploadInfoWindow.getParent() == null) {
         UI.getCurrent().addWindow(uploadInfoWindow);
       }
       uploadInfoWindow.setClosable(false);
     });
-    uploadBtn.addFinishedListener(event -> uploadInfoWindow.setClosable(true));
-    content.add(uploadBtn);
+    uploadBtn.addFinishedListener(event -> {
+      uploadInfoWindow.setClosable(true);
+      uploadInfoWindow.setShowResultsAction(e -> {
+        createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults());
+      });
+    });
+    return uploadBtn;
   }
-
-
 
   private Button createCalculateButton() {
     return new Button("Calculate", e -> {
-      changeState(StateBean.EState.Login);
+//      changeState(StateBean.EState.Login);
       Result result = calculate();
 
       tfMSEPerc.setValue(String.valueOf(result.getMsePerc()));
@@ -168,12 +205,60 @@ class ModelContent extends ABaseContent {
       modelBean.getModel().setMse(new BigDecimal(result.getMse()));
       modelBean.saveModel();
 
-      Notification notification=new Notification("Success",
-          "Model params are saved");
-      notification.setPosition(Position.TOP_RIGHT);
-      notification.setStyleName("");
-      notification.show(Page.getCurrent());
+      showSuccessNotification("Success", "Model params are saved");
     });
+  }
+
+  private void showSuccessNotification(String title, String descr) {
+    Notification notification = new Notification(title, descr);
+    notification.setPosition(Position.TOP_RIGHT);
+    notification.setStyleName("");
+    notification.show(Page.getCurrent());
+  }
+
+  private void showErrorNotification(String title, String descr) {
+    Notification notification = new Notification(title, descr);
+    notification.setPosition(Position.TOP_RIGHT);
+    notification.setStyleName("error");
+    notification.show(Page.getCurrent());
+  }
+
+  private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data) {
+    src.getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
+    MWindow window = new MWindow("New Data")
+        .withCenter()
+        .withClosable(true)
+        .withHeight(60, Sizeable.Unit.PERCENTAGE)
+        .withWidth(60, Sizeable.Unit.PERCENTAGE);
+
+    MGrid<WeatherStateData> grid = new MGrid<>(WeatherStateData.class)
+        .withProperties("date", "ghi", "ebh", "dni", "dhi", "cloudOpacity", "windSpeed")
+        .withColumnHeaders("date", "ghi", "ebh", "dni", "dhi", "cloudOpacity", "windSpeed")
+        .withWidth(90, Sizeable.Unit.PERCENTAGE)
+        .withHeight(90, Sizeable.Unit.PERCENTAGE);
+
+    grid.setRows(data);
+    Button mergeDataBtn = new Button("Save to DB");
+    mergeDataBtn.setVisible(true);
+    mergeDataBtn.addClickListener(e -> {
+      Long id = modelBean.getModel().getId();
+      data.forEach(d -> d.setModelId(id));
+      modelBean.mergeEntries(data);
+      showSuccessNotification("Merged", data.size() + " entries were added to model");
+      updateDataGrid();
+    });
+
+    MVerticalLayout layout = new MVerticalLayout(
+        grid,
+        mergeDataBtn)
+        .withExpand(grid, 1)
+        .withFullSize()
+        .withAlign(grid, Alignment.MIDDLE_CENTER)
+        .withAlign(mergeDataBtn, Alignment.MIDDLE_CENTER);
+
+    window.setContent(layout);
+    src.getUI().addWindow(window);
+
   }
 
   private Result calculate() {
@@ -205,7 +290,7 @@ class ModelContent extends ABaseContent {
   }
 
 
-  private void listData() {
+  private void updateDataGrid() {
     entriesGrid.setRows(modelBean.getEntries());
   }
 

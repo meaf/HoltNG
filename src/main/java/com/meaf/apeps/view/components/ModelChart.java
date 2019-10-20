@@ -50,7 +50,7 @@ public class ModelChart extends AbstractVaadinChartExample {
     configuration
         .getTooltip()
         .setFormatter(
-            "'<b>'+ this.series.name +'</b><br/>'+this.x +': '+ this.y +'°C'");
+            "'<b>'+ this.series.name +'</b><br/>'+this.x +': '+ this.y +'GHI'");
 
     PlotOptionsLine plotOptions = new PlotOptionsLine();
     plotOptions.getDataLabels().setEnabled(true);
