@@ -1,11 +1,14 @@
 package com.meaf.apeps.view.components;
 
+import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
+import com.meaf.apeps.input.csv.CSVFileReciever;
+import com.meaf.apeps.model.entity.WeatherStateData;
 import com.vaadin.annotations.StyleSheet;
 import com.vaadin.ui.*;
 
-import java.io.OutputStream;
+import java.util.List;
 
-@StyleSheet("uploadexample.css")
+@StyleSheet("vaadin://uploadWindow.css")
 public class UploadInfoWindow extends Window implements
     Upload.StartedListener, Upload.ProgressListener,
     Upload.FailedListener, Upload.SucceededListener,
@@ -17,11 +20,11 @@ public class UploadInfoWindow extends Window implements
 
   private final ProgressBar progressBar = new ProgressBar();
   private final Button cancelButton;
-  private final LineBreakCounter counter;
+  private final CSVFileReciever csvReciever;
 
-  public UploadInfoWindow(final Upload upload, final LineBreakCounter lineBreakCounter) {
+  public UploadInfoWindow(final Upload upload, final CSVFileReciever lineBreakCounter) {
     super("Status");
-    this.counter = lineBreakCounter;
+    this.csvReciever = lineBreakCounter;
 
     addStyleName("upload-info");
 
@@ -49,7 +52,7 @@ public class UploadInfoWindow extends Window implements
     fileName.setCaption("File name");
     uploadInfoLayout.addComponent(fileName);
 
-    result.setCaption("Line breaks counted");
+    result.setCaption("Rows loaded");
     uploadInfoLayout.addComponent(result);
 
     progressBar.setCaption("Progress");
@@ -69,11 +72,20 @@ public class UploadInfoWindow extends Window implements
 
   @Override
   public void uploadFinished(final Upload.FinishedEvent event) {
-    state.setValue("Idle");
+    groupData();
     progressBar.setVisible(false);
     textualProgress.setVisible(false);
     cancelButton.setVisible(false);
   }
+
+  private void groupData() {
+    state.setValue("Grouping data...");
+    progressBar.reset();
+    List<WeatherStateData> groupedData = WeatherAggregator.hourlyToDaily(csvReciever.getWeatherStateData());
+    result.setValue(String.format("%s (resulted in %s complete day(s))", csvReciever.getWeatherStateData().size(), groupedData.size()));
+    state.setValue("Finished!");
+  }
+
 
   @Override
   public void uploadStarted(final Upload.StartedEvent event) {
@@ -83,7 +95,7 @@ public class UploadInfoWindow extends Window implements
     UI.getCurrent().setPollInterval(500);
     textualProgress.setVisible(true);
     // updates to client
-    state.setValue("Uploading");
+    state.setValue("Uploading...");
     fileName.setValue(event.getFilename());
 
     cancelButton.setVisible(true);
@@ -93,113 +105,20 @@ public class UploadInfoWindow extends Window implements
   public void updateProgress(final long readBytes, final long contentLength) {
     // this method gets called several times during the update
     progressBar.setValue(readBytes / (float) contentLength);
-    textualProgress.setValue("Processed " + readBytes + " bytes of " + contentLength);
-    result.setValue(counter.getLineBreakCount() + " (counting...)");
+    textualProgress.setValue("Uploaded " + readBytes + " bytes of " + contentLength);
+    result.setValue(csvReciever.getWeatherStateData().size() + " (counting rows...)");
   }
 
   @Override
   public void uploadSucceeded(final Upload.SucceededEvent event) {
-    result.setValue(counter.getLineBreakCount() + " (total)");
+    result.setValue(csvReciever.getWeatherStateData().size() + " (total rows)");
   }
 
   @Override
   public void uploadFailed(final Upload.FailedEvent event) {
-    result.setValue(counter.getLineBreakCount()
+    result.setValue(csvReciever.getWeatherStateData().size()
         + " (counting interrupted at "
         + Math.round(100 * progressBar.getValue()) + "%)");
-  }
-
-  public static class LineBreakCounter implements Upload.Receiver {
-    private int counter;
-    private int total;
-    private boolean sleep;
-
-    /**
-     * return an OutputStream that simply counts lineends
-     */
-    @Override
-    public OutputStream receiveUpload(final String filename, final String MIMEType) {
-      counter = 0;
-      total = 0;
-      return new OutputStream() {
-        private static final int searchedByte = '\n';
-
-        @Override
-        public void write(final int b) {
-          total++;
-          if (b == searchedByte) {
-            counter++;
-          }
-          if (sleep && total % 1000 == 0) {
-            try {
-              Thread.sleep(100);
-            } catch (final InterruptedException e) {
-              e.printStackTrace();
-            }
-          }
-        }
-      };
-    }
-
-    public int getLineBreakCount() {
-      return counter;
-    }
-
-    public void setSlow(boolean value) {
-      sleep = value;
-    }
-  }
-
-
-  public static class WeatherDataParser implements Upload.Receiver {
-    private static final String header = "PeriodEnd,PeriodStart,Period,CloudOpacity,Dhi,Dni,Ebh,Ghi,WindDirection10m,WindSpeed10m";
-    private static final int endLineByte = '\n';
-    private int counter;
-    private int total;
-    private boolean sleep;
-
-    /**
-     * return an OutputStream that simply counts lineends
-     */
-    @Override
-    public OutputStream receiveUpload(final String filename, final String MIMEType) {
-      return new OutputStream() {
-        StringBuffer stringBuffer = new StringBuffer();
-        Boolean headerCorrect = false;
-
-        @Override
-        public void write(final int b) {
-          if (b != endLineByte) {
-            stringBuffer.append(b);
-            return;
-          }
-
-          String row = stringBuffer.toString();
-          if(!headerCorrect)
-            headerCorrect = header.equals(row);
-
-
-
-
-          stringBuffer.append(b);
-          if (sleep && total % 1000 == 0) {
-            try {
-              Thread.sleep(100);
-            } catch (final InterruptedException e) {
-              e.printStackTrace();
-            }
-          }
-        }
-      };
-    }
-
-    private int getLineBreakCount() {
-      return counter;
-    }
-
-    public void setSlow(boolean value) {
-      sleep = value;
-    }
   }
 }
 

@@ -3,7 +3,9 @@ package com.meaf.apeps.view.content.pages;
 import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
+import com.meaf.apeps.input.csv.CSVFileReciever;
 import com.meaf.apeps.model.entity.DataEntry;
+import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
 import com.meaf.apeps.view.beans.StateBean;
@@ -14,7 +16,6 @@ import com.vaadin.server.Page;
 import com.vaadin.server.Sizeable;
 import com.vaadin.shared.Position;
 import com.vaadin.ui.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.components.DisclosurePanel;
 import org.vaadin.viritin.grid.MGrid;
@@ -24,6 +25,8 @@ import org.vaadin.viritin.layouts.MVerticalLayout;
 
 import java.math.BigDecimal;
 import java.rmi.NoSuchObjectException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.stream.DoubleStream;
 
 @Component
@@ -113,16 +116,18 @@ class ModelContent extends ABaseContent {
   }
 
   private void addUploadBtn(MVerticalLayout content) {
-    UploadInfoWindow.LineBreakCounter lineBreakCounter = new UploadInfoWindow.LineBreakCounter();
-    lineBreakCounter.setSlow(true);
+    CSVFileReciever fileReciever= new CSVFileReciever();
 
-    Upload uploadBtn = new Upload(null, lineBreakCounter);
+    fileReciever.setDateScope(DateUtils.asSqlDate(new Date(107, Calendar.JANUARY, 2))); //TODO
+
+    Upload uploadBtn = new Upload(null, fileReciever);
     uploadBtn.setImmediateMode(false);
     uploadBtn.setButtonCaption("Upload File");
 
-    UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, lineBreakCounter);
+    UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReciever);
 
     uploadBtn.addStartedListener(event -> {
+      fileReciever.reset();
       if (uploadInfoWindow.getParent() == null) {
         UI.getCurrent().addWindow(uploadInfoWindow);
       }
@@ -202,4 +207,6 @@ class ModelContent extends ABaseContent {
     components.setSizeFull();
     this.chartWrapper.add(components).setSizeFull();
   }
+
+
 }

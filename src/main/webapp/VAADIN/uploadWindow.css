@@ -1,0 +1,9 @@
+.upload-info {
+    top: auto !important;
+    left: 20px !important;
+    bottom: 20px;
+}
+
+.upload-info * {
+    font-size: 14px !important;
+}
