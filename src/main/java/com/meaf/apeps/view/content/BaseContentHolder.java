@@ -6,9 +6,13 @@ import com.vaadin.ui.VerticalLayout;
 public class BaseContentHolder extends VerticalLayout {
   private Component component;
 
-  public void setComponent(Component component){
-    this.component = component;
+  public BaseContentHolder() {
+    setSpacing(false);
+    setMargin(false);
   }
 
-
+  public void fill(Component content) {
+    removeAllComponents();
+    addComponent(content);
+  }
 }

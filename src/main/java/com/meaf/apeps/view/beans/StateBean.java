@@ -19,4 +19,8 @@ public class StateBean {
   public EState getState() {
     return state;
   }
+
+  public void setState(EState state) {
+    this.state = state;
+  }
 }

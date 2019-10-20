@@ -30,12 +30,8 @@ public class MainUI extends UI {
   @Override
   protected void init(VaadinRequest request) {
     BaseContentHolder baseHolder = new BaseContentHolder();
+    setContent(baseHolder);
     router.setHolder(baseHolder);
-    showLoginPrompt();
-    defineView();
-  }
-
-  public void defineView() {
     router.route();
   }
 

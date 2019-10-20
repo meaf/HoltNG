@@ -23,7 +23,7 @@ public class ViewRouter implements ApplicationListener<StateChangeEvent> {
 
 
   public void route() {
-    holder.setComponent(getContent());
+    holder.fill(getContent());
   }
 
   private com.vaadin.ui.Component getContent() {
@@ -39,7 +39,8 @@ public class ViewRouter implements ApplicationListener<StateChangeEvent> {
 
   @Override
   public void onApplicationEvent(StateChangeEvent stateChangeEvent) {
-
+    this.stateBean.setState(stateChangeEvent.getState());
+    route();
   }
 
   public void setHolder(BaseContentHolder holder) {

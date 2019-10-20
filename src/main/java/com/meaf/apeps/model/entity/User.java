@@ -10,6 +10,8 @@ public class User extends ABaseEntity {
 
   @Column
   private String name;
+  @Column
+  private String password;
 
   public String getName() {
     return name;
@@ -17,5 +19,13 @@ public class User extends ABaseEntity {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
   }
 }

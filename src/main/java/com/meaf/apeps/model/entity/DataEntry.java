@@ -8,13 +8,13 @@ import java.sql.Date;
 @Table(name = "dataEntries")
 public class DataEntry extends ABaseEntity {
 
-  @Column(name = "value")
+  @Column
   private BigDecimal value;
 
-  @Column(name = "date")
+  @Column
   private Date date;
 
-  @Column(name = "modelId")
+  @Column
   private Long modelId;
 
   public BigDecimal getValue() {

@@ -8,36 +8,27 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "models")
 public class Model extends ABaseEntity {
-
-    @Column(name="name")
+    @Column
     private String name;
-
-    @Column(name="description")
+    @Column
     private String description;
-
-    @Column(name="fieldsName")
+    @Column
     private String fieldsName;
-
-    @Column(name="projectId")
+    @Column
     private Long projectId;
-
-    @Column(name="userId")
+    @Column
     private Long userId;
-
     @Column(name="alpha", precision = 8, scale = 5)
     private BigDecimal alpha;
-
     @Column(name="beta", precision = 8, scale = 5)
     private BigDecimal beta;
-
     @Column(name="gamma", precision = 8, scale = 5)
     private BigDecimal gamma;
-
     @Column(name="mse", precision = 8, scale = 5)
     private BigDecimal mse;
-
-    @Column(name="period")
+    @Column
     private Integer period;
+
 
     public String getName() {
         return name;

@@ -8,18 +8,19 @@ import java.util.Date;
 @MappedSuperclass
 public abstract class ABaseEntity implements Serializable {
 
-  @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "dateCreate")
-  protected Date dateCreate = new Date();
-
-  @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "lastUpdate")
-  protected Date lastUpdate = new Date();
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  protected Long id;
+  private Long id;
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "dateCreate")
+  private Date dateCreate = new Date();
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "lastUpdate")
+  private Date lastUpdate = new Date();
+
 
   public Date getDateCreate() {
     return dateCreate;

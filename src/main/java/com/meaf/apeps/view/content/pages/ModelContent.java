@@ -6,8 +6,10 @@ import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
+import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.meaf.apeps.view.components.ModelChart;
+import com.meaf.apeps.view.components.UploadInfoWindow;
 import com.vaadin.server.Page;
 import com.vaadin.server.Sizeable;
 import com.vaadin.shared.Position;
@@ -75,6 +77,7 @@ class ModelContent extends ABaseContent {
     lhErrorBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
+    chartWrapper.removeAllComponents();
     chartWrapper.add(lineChart);
 
     MVerticalLayout calculations = new MVerticalLayout(
@@ -96,13 +99,36 @@ class ModelContent extends ABaseContent {
         aboutBox,
         data
     );
+    addUploadBtn(content);
     listData();
     return content;
   }
 
+  private void addUploadBtn(MVerticalLayout content) {
+    UploadInfoWindow.LineBreakCounter lineBreakCounter = new UploadInfoWindow.LineBreakCounter();
+    lineBreakCounter.setSlow(true);
+
+    Upload uploadBtn = new Upload(null, lineBreakCounter);
+    uploadBtn.setImmediateMode(false);
+    uploadBtn.setButtonCaption("Upload File");
+
+    UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, lineBreakCounter);
+
+    uploadBtn.addStartedListener(event -> {
+      if (uploadInfoWindow.getParent() == null) {
+        UI.getCurrent().addWindow(uploadInfoWindow);
+      }
+      uploadInfoWindow.setClosable(false);
+    });
+    uploadBtn.addFinishedListener(event -> uploadInfoWindow.setClosable(true));
+    content.add(uploadBtn);
+  }
+
+
 
   private Button createCalculateButton() {
     return new Button("Calculate", e -> {
+      changeState(StateBean.EState.Login);
       Result result = calculate();
 
       tfMSEPerc.setValue(String.valueOf(result.getMsePerc()));

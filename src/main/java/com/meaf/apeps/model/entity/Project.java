@@ -8,13 +8,13 @@ import javax.persistence.Table;
 @Table(name = "projects")
 public class Project extends ABaseEntity {
 
-  @Column(name = "name")
+  @Column
   private String name;
 
-  @Column(name = "description")
+  @Column
   private String description;
 
-  @Column(name = "userId")
+  @Column
   private Long userId;
 
 
