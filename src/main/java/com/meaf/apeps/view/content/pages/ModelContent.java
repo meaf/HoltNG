@@ -4,7 +4,7 @@ import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.input.csv.CSVFileReciever;
-import com.meaf.apeps.model.entity.DataEntry;
+import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.rmi.NoSuchObjectException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.function.Function;
 import java.util.stream.DoubleStream;
 
 @Component
@@ -37,9 +38,9 @@ class ModelContent extends ABaseContent {
   private final ProjectBean projectBean;
   private Forecasting method;
 
-  private MGrid<DataEntry> entriesGrid = new MGrid<>(DataEntry.class)
-      .withProperties("date", "value")
-      .withColumnHeaders("date", "value")
+  private MGrid<WeatherStateData> entriesGrid = new MGrid<>(WeatherStateData.class)
+      .withProperties("date", "ghi", "windSpeed")
+      .withColumnHeaders("date", "ghi", "windSpeed")
       .withWidth(100, Sizeable.Unit.PERCENTAGE)
       .withHeight(100, Sizeable.Unit.PERCENTAGE);
   private CoefficientsBar lhCoefficients;
@@ -48,6 +49,7 @@ class ModelContent extends ABaseContent {
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
+  private boolean solarStats;
 
   public ModelContent(ModelBean modelBean, ProjectBean projectBean) {
     this.modelBean = modelBean;
@@ -175,8 +177,8 @@ class ModelContent extends ABaseContent {
   }
 
   private Result calculate() {
-    double[] inputData = modelBean.getEntries().stream()
-        .flatMapToDouble(e -> DoubleStream.of(e.getValue().doubleValue()))
+    double[] inputData = modelBean.getEntries().stream().map(getDataTypeMapper())
+        .flatMapToDouble(value -> DoubleStream.of(value.doubleValue()))
         .toArray();
 
     method = new HoltWinters();
@@ -189,6 +191,12 @@ class ModelContent extends ABaseContent {
 
     redrawChart();
     return method.getOptimalResult();
+  }
+
+  private Function<WeatherStateData, Number> getDataTypeMapper() {
+    return solarStats
+        ? WeatherStateData::getGhi
+        : WeatherStateData::getWindSpeed;
   }
 
   private void initFakeData() throws NoSuchObjectException {

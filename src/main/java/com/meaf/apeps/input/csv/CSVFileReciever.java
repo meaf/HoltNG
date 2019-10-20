@@ -1,5 +1,6 @@
 package com.meaf.apeps.input.csv;
 
+import com.meaf.apeps.input.IWeatherParser;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.vaadin.server.UploadException;
@@ -7,15 +8,19 @@ import com.vaadin.ui.Upload;
 
 import java.io.OutputStream;
 import java.sql.Date;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class CSVFileReciever implements Upload.Receiver {
+  IWeatherParser parser = new CSVRowParser();
   private static final String header = "PeriodEnd,PeriodStart,Period,CloudOpacity,Dhi,Dni,Ebh,Ghi,WindDirection10m,WindSpeed10m";
   private static final int endLineByte = '\n';
 
-  private List<WeatherStateData> weatherStateData = new LinkedList<>();
+  private List<String> rows = new LinkedList<>();
   private java.util.Date filterDate;
 
 
@@ -46,7 +51,7 @@ public class CSVFileReciever implements Upload.Receiver {
         }
 
         if(dateComplies(row)) {
-          weatherStateData.add(CSVRowParser.parse(row));
+          rows.add(row);
         }
 
         reset(stringBuffer);
@@ -79,9 +84,15 @@ public class CSVFileReciever implements Upload.Receiver {
     return -1 < DateUtils.zonedTimeStringToInstant(row.split(",")[0]).compareTo(filterDate);
   }
 
-  public List<WeatherStateData> getWeatherStateData() {
-    return weatherStateData;
+  public List<String> getLoadedRows() {
+    return rows;
   }
+
+  public List<WeatherStateData> parseRows(){
+    return parser.parse(rows.stream().collect(Collectors.joining("\n")));
+  }
+
+
 
   public void setDateScope(Date filterDate) {
     Calendar cal = Calendar.getInstance();
@@ -92,6 +103,6 @@ public class CSVFileReciever implements Upload.Receiver {
   }
 
   public void reset() {
-    weatherStateData.clear();
+    rows.clear();
   }
 }

@@ -1,14 +1,14 @@
 package com.meaf.apeps.input.csv;
 
+import com.meaf.apeps.input.IWeatherParser;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-class CSVRowParser {
+class CSVRowParser implements IWeatherParser {
 
 // 0  - PeriodEnd
 // 1  - PeriodStart
@@ -21,9 +21,12 @@ class CSVRowParser {
 // 8  - WindDirection10m
 // 9  - WindSpeed10m
 //ZonedDateTime.parse(rowData[0]).withZoneSameInstant()
-  private static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-  static WeatherStateData parse(String row) {
+  public List<WeatherStateData> parse(String data) {
+    return Arrays.stream(data.split("\n")).map(this::parseRow).collect(Collectors.toList());
+  }
+
+  private WeatherStateData parseRow(String row) {
     String[] rowAttr = row.split(",");
     WeatherStateData weatherStateData = new WeatherStateData();
 
@@ -34,7 +37,6 @@ class CSVRowParser {
     weatherStateData.setEbh(Integer.parseInt(rowAttr[6]));
     weatherStateData.setGhi(Integer.parseInt(rowAttr[7]));
     weatherStateData.setWindSpeed(Double.parseDouble(rowAttr[9]));
-
     return weatherStateData;
   }
 

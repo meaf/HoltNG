@@ -1,54 +1,23 @@
 package com.meaf.apeps.input.http;
 
+import org.springframework.http.HttpStatus;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.HttpURLConnection;
-import java.util.Iterator;
-import java.util.List;
 
 class FullResponseBuilder {
 
 
-  static String getFullResponse(HttpURLConnection con) throws IOException {
-    StringBuilder fullResponseBuilder = new StringBuilder();
+  static HttpResponse getFullResponse(HttpURLConnection con) throws IOException {
+    HttpResponse response = new HttpResponse();
 
-    fullResponseBuilder.append(con.getResponseCode())
-        .append(" ")
-        .append(con.getResponseMessage())
-        .append("\n");
+    response.setStatus(HttpStatus.resolve(con.getResponseCode()));
+    response.setHeaders(con.getHeaderFields());
 
-    con.getHeaderFields()
-        .entrySet()
-        .stream()
-        .filter(entry -> entry.getKey() != null)
-        .forEach(entry -> {
-
-          fullResponseBuilder.append(entry.getKey())
-              .append(": ");
-
-          List<String> headerValues = entry.getValue();
-          Iterator<String> it = headerValues.iterator();
-          if (it.hasNext()) {
-            fullResponseBuilder.append(it.next());
-
-            while (it.hasNext()) {
-              fullResponseBuilder.append(", ")
-                  .append(it.next());
-            }
-          }
-
-          fullResponseBuilder.append("\n");
-        });
-
-    Reader streamReader = null;
-
-    if (con.getResponseCode() > 299) {
-      streamReader = new InputStreamReader(con.getErrorStream());
-    } else {
-      streamReader = new InputStreamReader(con.getInputStream());
-    }
+    Reader streamReader = new InputStreamReader(isError(con) ? con.getErrorStream() : con.getInputStream());
 
     BufferedReader in = new BufferedReader(streamReader);
     String inputLine;
@@ -56,12 +25,14 @@ class FullResponseBuilder {
     while ((inputLine = in.readLine()) != null) {
       content.append(inputLine);
     }
-
     in.close();
 
-    fullResponseBuilder.append("Response: ")
-        .append(content);
 
-    return fullResponseBuilder.toString();
+    response.setResponse(content.toString());
+    return response;
+  }
+
+  private static boolean isError(HttpURLConnection con) throws IOException {
+    return con.getResponseCode() > 299;
   }
 }

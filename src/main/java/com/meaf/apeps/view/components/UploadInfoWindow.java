@@ -81,8 +81,8 @@ public class UploadInfoWindow extends Window implements
   private void groupData() {
     state.setValue("Grouping data...");
     progressBar.reset();
-    List<WeatherStateData> groupedData = WeatherAggregator.hourlyToDaily(csvReciever.getWeatherStateData());
-    result.setValue(String.format("%s (resulted in %s complete day(s))", csvReciever.getWeatherStateData().size(), groupedData.size()));
+    List<WeatherStateData> groupedData = WeatherAggregator.hourlyToDaily(csvReciever.parseRows(), WeatherAggregator.EDataSource.csv);
+    result.setValue(String.format("%s (resulted in %s complete day(s))", csvReciever.getLoadedRows().size(), groupedData.size()));
     state.setValue("Finished!");
   }
 
@@ -106,17 +106,17 @@ public class UploadInfoWindow extends Window implements
     // this method gets called several times during the update
     progressBar.setValue(readBytes / (float) contentLength);
     textualProgress.setValue("Uploaded " + readBytes + " bytes of " + contentLength);
-    result.setValue(csvReciever.getWeatherStateData().size() + " (counting rows...)");
+    result.setValue(csvReciever.getLoadedRows().size() + " (counting rows...)");
   }
 
   @Override
   public void uploadSucceeded(final Upload.SucceededEvent event) {
-    result.setValue(csvReciever.getWeatherStateData().size() + " (total rows)");
+    result.setValue(csvReciever.getLoadedRows().size() + " (total rows)");
   }
 
   @Override
   public void uploadFailed(final Upload.FailedEvent event) {
-    result.setValue(csvReciever.getWeatherStateData().size()
+    result.setValue(csvReciever.getLoadedRows().size()
         + " (counting interrupted at "
         + Math.round(100 * progressBar.getValue()) + "%)");
   }

@@ -3,7 +3,6 @@ package com.meaf.apeps.calculations.aggregate;
 import com.meaf.apeps.model.entity.TimelessDate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 
-import java.sql.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -11,11 +10,22 @@ import java.util.stream.Collectors;
 
 public class WeatherAggregator {
 
+  public enum EDataSource {
+    http(48),
+    csv(24);
+
+    final int entriesPerDay;
+
+    EDataSource(int entriesPerDay) {
+      this.entriesPerDay = entriesPerDay;
+    }
+  }
+
   private WeatherAggregator() {
   }
 
-  public static List<WeatherStateData> hourlyToDaily(List<WeatherStateData> input) {
-    final int dailyEntries = 24;
+  public static List<WeatherStateData> hourlyToDaily(List<WeatherStateData> input, EDataSource dataSource) {
+    final int dailyEntries = dataSource.entriesPerDay;
 
     final Map<TimelessDate, List<WeatherStateData>> groupedMap = input
         .stream()
@@ -25,14 +35,14 @@ public class WeatherAggregator {
     final List<WeatherStateData> avgState = new LinkedList<>();
     groupedMap.entrySet()
         .stream()
-        .filter((e -> dailyEntries == e.getValue().size())) // only full day counts
+        .filter((e -> dailyEntries == e.getValue().size() || dailyEntries == e.getValue().size() + 1)) // only full day counts
         .forEach(e -> avgState.add(e.getValue().stream().reduce(new WeatherStateData(), WeatherAggregator::accumulate)));
 
-    return avgState.stream().map(WeatherAggregator::averageDaily).collect(Collectors.toList());
+    return avgState.stream().map(w -> averageDaily(w, dataSource)).collect(Collectors.toList());
   }
 
-  private static WeatherStateData averageDaily(WeatherStateData stateData) {
-    final int dailyEntries = 24;
+  private static WeatherStateData averageDaily(WeatherStateData stateData, EDataSource dataSource) {
+    int dailyEntries = dataSource.entriesPerDay;
 
     stateData.setDhi(stateData.getDhi() / dailyEntries);
     stateData.setDni(stateData.getDni() / dailyEntries);
@@ -46,6 +56,7 @@ public class WeatherAggregator {
 
   private static WeatherStateData accumulate(WeatherStateData acc, WeatherStateData src) {
 
+    acc.setDate(src.getDate());
     acc.setDhi(Math.addExact(acc.getDhi(), src.getDhi()));
     acc.setDni(Math.addExact(acc.getDni(), src.getDni()));
     acc.setGhi(Math.addExact(acc.getGhi(), src.getGhi()));

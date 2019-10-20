@@ -1,9 +1,9 @@
 package com.meaf.apeps.view.beans;
 
-import com.meaf.apeps.model.entity.DataEntry;
 import com.meaf.apeps.model.entity.Model;
-import com.meaf.apeps.model.repository.DataEntryRepository;
+import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.model.repository.ModelRepository;
+import com.meaf.apeps.model.repository.WeatherStateRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
 
@@ -14,13 +14,13 @@ import java.util.List;
 @SessionScope
 public class ModelBean {
 
-  private final DataEntryRepository entryRepository;
+  private final WeatherStateRepository weatherStateRepository;
   private final ModelRepository modelRepository;
 
   private Model model;
 
-  public ModelBean(DataEntryRepository entryRepository, ModelRepository modelRepository) {
-    this.entryRepository = entryRepository;
+  public ModelBean(WeatherStateRepository weatherStateRepository, ModelRepository modelRepository) {
+    this.weatherStateRepository = weatherStateRepository;
     this.modelRepository = modelRepository;
   }
 
@@ -32,8 +32,8 @@ public class ModelBean {
     this.model = modelRepository.findById(modelId).orElseThrow(() -> new NoSuchObjectException("Cannot find model by id=" + modelId));
   }
 
-  public List<DataEntry> getEntries() {
-    return entryRepository.findDataEntriesByModelId(model.getId());
+  public List<WeatherStateData> getEntries() {
+    return weatherStateRepository.findDataByModelId(model.getId());
   }
 
   public void saveModel() {
