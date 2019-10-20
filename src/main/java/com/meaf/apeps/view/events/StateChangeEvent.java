@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEvent;
 public class StateChangeEvent extends ApplicationEvent {
   private StateBean.EState state;
 
-  public StateChangeEvent(Object source, StateBean.EState state) {
+  StateChangeEvent(Object source, StateBean.EState state) {
     super(source);
     this.state = state;
   }

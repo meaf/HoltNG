@@ -11,16 +11,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ViewRouter implements ApplicationListener<StateChangeEvent> {
 
-  @Autowired
-  private StateBean stateBean;
-  @Autowired
-  private ModelContent modelContent;
-  @Autowired
-  private LoginContent loginContent;
-  @Autowired
-  private ContentWrapper wrapper;
+  private final StateBean stateBean;
+  private final ModelContent modelContent;
+  private final LoginContent loginContent;
+
   private BaseContentHolder holder;
 
+  public ViewRouter(StateBean stateBean, ModelContent modelContent, LoginContent loginContent) {
+    this.stateBean = stateBean;
+    this.modelContent = modelContent;
+    this.loginContent = loginContent;
+  }
 
   public void route() {
     holder.fill(getContent());

@@ -1,7 +1,7 @@
 package com.meaf.apeps.calculations;
 
 public class Result {
-  public Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
+  Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
     this.alpha = alpha; //коэффициент сглаживания ряда
     this.beta = beta; //коэффициент сглаживания тренда
     this.gamma = gamma; //коэффициент сглаживания сезонности

@@ -1,18 +1,19 @@
 package com.meaf.apeps.view.content.pages;
 
-import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.view.beans.SessionBean;
 import com.meaf.apeps.view.beans.StateBean;
 import com.vaadin.ui.Button;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 
 @Component
 public
-class LoginContent extends ABaseContent{
-  @Autowired
-  private SessionBean sessionBean;
+class LoginContent extends ABaseContent {
+  private final SessionBean sessionBean;
+
+  public LoginContent(SessionBean sessionBean) {
+    this.sessionBean = sessionBean;
+  }
 
   @Override
   public com.vaadin.ui.Component getContent() {
@@ -20,11 +21,8 @@ class LoginContent extends ABaseContent{
   }
 
   private Button createCalculateButton() {
-    return new Button("Calculate", e -> {
-      changeState(StateBean.EState.Model);
-    });
+    return new Button("Calculate", e -> changeState(StateBean.EState.Model));
   }
-
 
 
 }

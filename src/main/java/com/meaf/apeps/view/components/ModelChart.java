@@ -1,7 +1,6 @@
 package com.meaf.apeps.view.components;
 
 import com.meaf.apeps.calculations.Forecasting;
-import com.meaf.apeps.calculations.HoltWinters;
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.examples.AbstractVaadinChartExample;
 import com.vaadin.addon.charts.model.*;
@@ -16,13 +15,13 @@ public class ModelChart extends AbstractVaadinChartExample {
 
   private static DecimalFormat df = new DecimalFormat("#.##");
 
-  List<Double> input = new ArrayList<>();
-  List<Double> smoothed = new ArrayList<>();
-  List<Double> model = new ArrayList<>();
+  private List<Double> input = new ArrayList<>();
+  private List<Double> smoothed = new ArrayList<>();
+  private List<Double> model = new ArrayList<>();
 
   public ModelChart(Forecasting method) {
     super();
-    if(method == null)
+    if (method == null)
       return;
     this.input = method.getInputData();
     this.smoothed = method.getSmoothedData();
@@ -47,8 +46,6 @@ public class ModelChart extends AbstractVaadinChartExample {
     configuration.getChart().setZoomType(ZoomType.X);
 
     configuration.getTitle().setText("Resulting chart");
-
-    YAxis yAxis = configuration.getyAxis();
 
     configuration
         .getTooltip()
@@ -85,7 +82,7 @@ public class ModelChart extends AbstractVaadinChartExample {
   }
 
   private List<Number> asNumbersList(List<Double> input) {
-    return input.stream().map(d -> Double.parseDouble(df.format(d))).map(d -> (Number)d).collect(Collectors.toList());
+    return input.stream().map(d -> Double.parseDouble(df.format(d))).map(d -> (Number) d).collect(Collectors.toList());
   }
 
 }

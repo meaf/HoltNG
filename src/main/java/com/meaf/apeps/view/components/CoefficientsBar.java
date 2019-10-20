@@ -16,10 +16,6 @@ public class CoefficientsBar extends MHorizontalLayout {
 
   private static DecimalFormat df = new DecimalFormat("#.##");
 
-  public CoefficientsBar() {
-    super();
-  }
-
   public CoefficientsBar(Model model) {
     super();
     this.tfAlpha = new TextField("Alpha", defEmpty(model.getAlpha()));

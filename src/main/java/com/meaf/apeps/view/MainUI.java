@@ -20,12 +20,11 @@ public class MainUI extends UI {
 
   private static final long serialVersionUID = 1L;
 
-  @Autowired
-  private ModelContent modelContent;
-  @Autowired
-  private ViewRouter router;
-  @Autowired
-  private SessionBean sessionBean;
+  private final ViewRouter router;
+
+  public MainUI(ViewRouter router) {
+    this.router = router;
+  }
 
   @Override
   protected void init(VaadinRequest request) {
@@ -33,19 +32,6 @@ public class MainUI extends UI {
     setContent(baseHolder);
     router.setHolder(baseHolder);
     router.route();
-  }
-
-  private void showLoginPrompt() {
-    if (!sessionBean.isUserLoggedIn()) {
-      LoginForm component = new LoginForm();
-      component.addLoginListener(e -> {
-        boolean isAuthenticated = sessionBean.authenticate(e);
-        if (!isAuthenticated) {
-          component.attach();
-//                component.set`(true);
-        }
-      });
-    }
   }
 
 }

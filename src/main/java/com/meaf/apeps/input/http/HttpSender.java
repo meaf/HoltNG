@@ -8,14 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HttpSender {
-
-  public static void main(String[] args) {
-    try {
-      new HttpSender().sendUpdateRequest();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+//
+//  public static void main(String[] args) {
+//    try {
+//      new HttpSender().sendUpdateRequest();
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
+//  }
 
   public static void sendUpdateRequest() throws IOException {
     String resultUrl = prepareUrlString();

@@ -23,16 +23,15 @@ import org.vaadin.viritin.layouts.MHorizontalLayout;
 import org.vaadin.viritin.layouts.MVerticalLayout;
 
 import java.math.BigDecimal;
+import java.rmi.NoSuchObjectException;
 import java.util.stream.DoubleStream;
 
 @Component
 public
 class ModelContent extends ABaseContent {
 
-  @Autowired
-  private ModelBean modelBean;
-  @Autowired
-  private ProjectBean projectBean;
+  private final ModelBean modelBean;
+  private final ProjectBean projectBean;
   private Forecasting method;
 
   private MGrid<DataEntry> entriesGrid = new MGrid<>(DataEntry.class)
@@ -45,11 +44,20 @@ class ModelContent extends ABaseContent {
   private TextField tfRMSE = new TextField();
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
-  MHorizontalLayout chartWrapper = new MHorizontalLayout();
+  private MHorizontalLayout chartWrapper = new MHorizontalLayout();
+
+  public ModelContent(ModelBean modelBean, ProjectBean projectBean) {
+    this.modelBean = modelBean;
+    this.projectBean = projectBean;
+  }
 
   @Override
   public com.vaadin.ui.Component getContent() {
-    initFakeData();
+    try {
+      initFakeData();
+    } catch (NoSuchObjectException e) {
+      e.printStackTrace();
+    }
 
     Button btnCalculate = createCalculateButton();
     Button btnSaveResults = createSaveButton();
@@ -178,7 +186,7 @@ class ModelContent extends ABaseContent {
     return method.getOptimalResult();
   }
 
-  private void initFakeData() {
+  private void initFakeData() throws NoSuchObjectException {
     projectBean.switchProject(1L);
     modelBean.switchModel(1L);
   }

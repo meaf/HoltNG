@@ -7,19 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 public class CSVFileProcessor {
-
-  public static List<WeatherStateData> loadData(Date dateFrom, Date dateTo){
-
-    List<WeatherStateData> resultList = new ArrayList<>();
-
-
-
-
-
-
-
+  public static List<WeatherStateData> loadData(Date dateFrom, Date dateTo) {
     return null;
-  };
-
-
+  }
 }
