@@ -3,11 +3,14 @@ package com.meaf.apeps.model.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.sql.Date;
 
 @Entity
 @Table(name = "weatherStateData")
 public class WeatherStateData extends ABaseEntity {
+  @Transient
+  private Integer unitsToAggregate;
   @Column
   private Date date;
   @Column
@@ -85,11 +88,23 @@ public class WeatherStateData extends ABaseEntity {
     return date;
   }
 
-  public TimelessDate asTimelessDate() {
-    return new TimelessDate(date.getTime());
+  public TimelessDate asDayUnit() {
+    return new TimelessDate(TimelessDate.EDateType.DAILY, date.getTime());
+  }
+
+  public TimelessDate asMonthUnit() {
+    return new TimelessDate(TimelessDate.EDateType.MONTHY, date.getTime());
   }
 
   public void setDate(Date date) {
     this.date = date;
+  }
+
+  public Integer getUnitsToAggregate() {
+    return unitsToAggregate;
+  }
+
+  public void setUnitsToAggregate(Integer unitsToAggregate) {
+    this.unitsToAggregate = unitsToAggregate;
   }
 }

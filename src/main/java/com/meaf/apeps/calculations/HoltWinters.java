@@ -90,7 +90,7 @@ public class HoltWinters implements Forecasting {
     initValues(forecastLen);
 
     for (int i = 1; i < S.length; i++)
-      calculateStep(alpha, beta, gamma, forecastLen, i);
+      calculateStep(alpha, beta, gamma, period, i);
 
     for (int i = S.length; i < S.length + forecastLen; i++)
       calculateForecastStep(period, i);
@@ -120,13 +120,14 @@ public class HoltWinters implements Forecasting {
     ErrorPerc[0] = 0;
   }
 
-  private void calculateStep(double alpha, double beta, double gamma, int forecastLen, int i) {
-    Lt[i] = (alpha * S[i] / getSeasonalK(i, forecastLen)) + (1 - alpha) * (Lt[i - 1] + Tt[i - 1]);
-    Tt[i] = beta * (Lt[i] - Lt[i - 1]) + (1 - beta) * Tt[i - 1];
-    Sts[i] =
-        i < forecastLen ? 1 : gamma * (S[i] / Lt[i]) + (1 - gamma) * getSeasonalK(i, forecastLen);
+  private void calculateStep(double alpha, double beta, double gamma, int period, int i) {
+    Lt[i] = alpha * S[i] / getSeasonalK(i, period) + ((1 - alpha) * (Lt[i - 1] + Tt[i - 1]));
+    Tt[i] = beta * (Lt[i] - Lt[i - 1]) + ((1 - beta) * Tt[i - 1]);
+    Sts[i] = i <= period
+        ? 1
+        : gamma * S[i] / Lt[i] + ((1 - gamma) * getSeasonalK(i, period));
 
-    FcEstimated[i] = (Lt[i - 1] + Tt[i - 1]) * getSeasonalK(i, forecastLen);
+    FcEstimated[i] = (Lt[i - 1] + Tt[i - 1]) * getSeasonalK(i, period);
     Err[i] = S[i] - FcEstimated[i];
     ErrorMAE[i] = Math.abs(Err[i]);
     ErrorMSE[i] = (Err[i] * Err[i]);
@@ -139,8 +140,8 @@ public class HoltWinters implements Forecasting {
     Fc[p - 1] = (Lt[lastSequenceValueInd] + Tt[lastSequenceValueInd] * p) * Sts[i - period];
   }
 
-  private double getSeasonalK(int i, int forecastLen) {
-    return i < forecastLen ? 1 : Sts[i - forecastLen];
+  private double getSeasonalK(int i, int period) {
+    return i < period ? 1 : Sts[i - period];
   }
 
   private void calculateError(){

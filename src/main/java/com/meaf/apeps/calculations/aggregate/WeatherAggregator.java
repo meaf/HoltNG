@@ -3,6 +3,7 @@ package com.meaf.apeps.calculations.aggregate;
 import com.meaf.apeps.model.entity.TimelessDate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,21 +30,49 @@ public class WeatherAggregator {
 
     final Map<TimelessDate, List<WeatherStateData>> groupedMap = input
         .stream()
-        .collect(Collectors.groupingBy(WeatherStateData::asTimelessDate));
+        .collect(Collectors.groupingBy(WeatherStateData::asDayUnit));
 
 
     final List<WeatherStateData> avgState = new LinkedList<>();
     groupedMap.entrySet()
         .stream()
         .filter((e -> dailyEntries == e.getValue().size()  // only full day counts
-            || dailyEntries == e.getValue().size() + 1))   //todo: damn you solcast API for allowing this
-        .forEach(e -> avgState.add(e.getValue().stream().reduce(new WeatherStateData(), WeatherAggregator::accumulate)));
+            || dailyEntries == e.getValue().size() + 1))   // todo: damn you solcast API for allowing this
+        .forEach(e -> avgState.add(e.getValue().stream().reduce(createAccumulator(e), WeatherAggregator::accumulate)));
 
-    return avgState.stream().map(w -> averageDaily(w, dataSource)).collect(Collectors.toList());
+    return avgState.stream().map(WeatherAggregator::average).collect(Collectors.toList());
   }
 
-  private static WeatherStateData averageDaily(WeatherStateData stateData, EDataSource dataSource) {
-    int dailyEntries = dataSource.entriesPerDay;
+  public static List<WeatherStateData> dailyToMonthy(List<WeatherStateData> input) {
+
+    final int acceptableAmount = 31;
+    final Map<TimelessDate, List<WeatherStateData>> groupedMap = input
+        .stream()
+        .collect(Collectors.groupingBy(WeatherStateData::asMonthUnit));
+
+    final List<WeatherStateData> avgState = new LinkedList<>();
+    groupedMap.entrySet()
+        .stream()
+        .filter((e -> acceptableAmount == e.getValue().size()  // only full day counts
+            || acceptableAmount == e.getValue().size() + 1
+            || acceptableAmount == e.getValue().size() + 2
+            || acceptableAmount == e.getValue().size() + 3))
+        .forEach(e -> avgState.add(e.getValue().stream().reduce(createAccumulator(e), WeatherAggregator::accumulate)));
+
+    return avgState.stream()
+        .map(WeatherAggregator::average)
+        .sorted(Comparator.comparing(WeatherStateData::getDate))
+            .collect(Collectors.toList());
+  }
+
+  private static WeatherStateData createAccumulator(Map.Entry<TimelessDate, List<WeatherStateData>> list) {
+    WeatherStateData data = new WeatherStateData();
+    data.setUnitsToAggregate(list.getValue().size());
+    return data;
+  }
+
+  private static WeatherStateData average(WeatherStateData stateData) {
+    int dailyEntries = stateData.getUnitsToAggregate();
 
     stateData.setDhi(stateData.getDhi() / dailyEntries);
     stateData.setDni(stateData.getDni() / dailyEntries);

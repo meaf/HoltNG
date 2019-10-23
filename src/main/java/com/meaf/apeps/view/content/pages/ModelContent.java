@@ -3,13 +3,13 @@ package com.meaf.apeps.view.content.pages;
 import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
+import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.csv.CSVFileReciever;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
-import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.meaf.apeps.view.components.ModelChart;
 import com.meaf.apeps.view.components.UploadInfoWindow;
@@ -19,6 +19,7 @@ import com.vaadin.shared.Position;
 import com.vaadin.ui.*;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.components.DisclosurePanel;
+import org.vaadin.viritin.fields.MCheckBox;
 import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
@@ -54,7 +55,8 @@ class ModelContent extends ABaseContent {
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
-  private boolean solarStats = true;
+  private MCheckBox cxSolarStats = new MCheckBox("Solar energy");
+  private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly");
 
   public ModelContent(ModelBean modelBean, ProjectBean projectBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
@@ -92,8 +94,8 @@ class ModelContent extends ABaseContent {
     tfMSEPerc.setCaption("MSE, %");
     tfMSEPerc.setEnabled(false);
 
-    MHorizontalLayout lhErrorBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE);
-    lhErrorBar.setCaption("Average node MSE");
+    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
+    hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
     chartWrapper.removeAllComponents();
@@ -102,7 +104,7 @@ class ModelContent extends ABaseContent {
     MVerticalLayout calculations = new MVerticalLayout(
         lhCoefficients,
         chartWrapper,
-        lhErrorBar
+        hlBottomBar
     ).withFullWidth();
 
     Upload uploadButton = createUploadButton();
@@ -143,7 +145,7 @@ class ModelContent extends ABaseContent {
         showErrorNotification("Http update error", "could not communicate to data sever");
         return;
       }
-      createNewDataWindow(updButton, weatherStateDataList);
+      createNewDataWindow(updButton, weatherStateDataList, false);
     });
 
     return updButton;
@@ -171,9 +173,7 @@ class ModelContent extends ABaseContent {
     });
     uploadBtn.addFinishedListener(event -> {
       uploadInfoWindow.setClosable(true);
-      uploadInfoWindow.setShowResultsAction(e -> {
-        createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults());
-      });
+      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults(), false));
     });
     return uploadBtn;
   }
@@ -223,7 +223,7 @@ class ModelContent extends ABaseContent {
     notification.show(Page.getCurrent());
   }
 
-  private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data) {
+  private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
     src.getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
     MWindow window = new MWindow("New Data")
         .withCenter()
@@ -237,6 +237,10 @@ class ModelContent extends ABaseContent {
         .withWidth(90, Sizeable.Unit.PERCENTAGE)
         .withHeight(90, Sizeable.Unit.PERCENTAGE);
 
+    if(!displayWindColumn)
+      grid.removeColumn("windSpeed");
+
+    grid.sort("date");
     grid.setRows(data);
     Button mergeDataBtn = new Button("Save to DB");
     mergeDataBtn.setVisible(true);
@@ -262,8 +266,13 @@ class ModelContent extends ABaseContent {
   }
 
   private Result calculate() {
-    double[] inputData = modelBean.getEntries().stream().map(getDataTypeMapper())
+    double[] inputData =
+        (cxGroupMonthly.getValue()
+            ? WeatherAggregator.dailyToMonthy(modelBean.getEntries())
+            : modelBean.getEntries())
+        .stream().map(getDataTypeMapper())
         .flatMapToDouble(value -> DoubleStream.of(value.doubleValue()))
+//        .limit(50)
         .toArray();
 
     method = new HoltWinters();
@@ -279,7 +288,7 @@ class ModelContent extends ABaseContent {
   }
 
   private Function<WeatherStateData, Number> getDataTypeMapper() {
-    return solarStats
+    return cxSolarStats.getValue()
         ? WeatherStateData::getGhi
         : WeatherStateData::getWindSpeed;
   }
