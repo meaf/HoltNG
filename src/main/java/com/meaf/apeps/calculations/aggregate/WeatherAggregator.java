@@ -36,8 +36,9 @@ public class WeatherAggregator {
     final List<WeatherStateData> avgState = new LinkedList<>();
     groupedMap.entrySet()
         .stream()
-        .filter((e -> dailyEntries == e.getValue().size()  // only full day counts
-            || dailyEntries == e.getValue().size() + 1))   // todo: damn you solcast API for allowing this
+        .filter(e -> dailyEntries == e.getValue().size()  // only full day counts
+            || dailyEntries == e.getValue().size() + 1   // todo: damn you solcast API for allowing this
+            || dailyEntries == e.getValue().size() + 2)   // todo: damn you solcast API for allowing this
         .forEach(e -> avgState.add(e.getValue().stream().reduce(createAccumulator(e), WeatherAggregator::accumulate)));
 
     return avgState.stream().map(WeatherAggregator::average).collect(Collectors.toList());
