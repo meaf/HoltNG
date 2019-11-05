@@ -1,6 +1,5 @@
 package com.meaf.apeps.view.content.pages;
 
-import com.meaf.apeps.calculations.Forecasting;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
@@ -8,6 +7,7 @@ import com.meaf.apeps.input.csv.CSVFileReciever;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
+import com.meaf.apeps.utils.ETargetValues;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
 import com.meaf.apeps.view.components.CoefficientsBar;
@@ -28,22 +28,21 @@ import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
 import java.rmi.NoSuchObjectException;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.DoubleStream;
+import java.util.stream.Collectors;
 
 @Component
 public
 class ModelContent extends ABaseContent {
 
+  private static DecimalFormat df = new DecimalFormat("#.####");
   private final ModelBean modelBean;
   private final ProjectBean projectBean;
   private final RequestHttpUpdate requestHttpUpdate;
-
-  private Forecasting method;
-
+  private HoltWinters method;
   private MGrid<WeatherStateData> entriesGrid = new MGrid<>(WeatherStateData.class)
       .withProperties("date", "ghi", "windSpeed")
       .withColumnHeaders("date", "ghi", "windSpeed")
@@ -55,8 +54,8 @@ class ModelContent extends ABaseContent {
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
-  private MCheckBox cxSolarStats = new MCheckBox("Solar energy");
-  private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly");
+  private MCheckBox cxSolarStats = new MCheckBox("Solar energy", true);
+  private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly", true);
 
   public ModelContent(ModelBean modelBean, ProjectBean projectBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
@@ -125,8 +124,8 @@ class ModelContent extends ABaseContent {
         calculations
     ).withFullWidth();
 
-    data.setExpandRatio(dataTableOptions, 1);
-    data.setExpandRatio(calculations, 4);
+    data.setExpandRatio(dataTableOptions, 2);
+    data.setExpandRatio(calculations, 7);
 
     DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()));
     MVerticalLayout content = new MVerticalLayout(
@@ -163,7 +162,7 @@ class ModelContent extends ABaseContent {
     UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReciever);
 
     uploadBtn.addStartedListener(event -> {
-      if("".equals(event.getFilename()) || event.getContentLength() == 0)
+      if ("".equals(event.getFilename()) || event.getContentLength() == 0)
         return;
       fileReciever.reset();
       if (uploadInfoWindow.getParent() == null) {
@@ -183,10 +182,10 @@ class ModelContent extends ABaseContent {
 //      changeState(StateBean.EState.Login);
       Result result = calculate();
 
-      tfMSEPerc.setValue(String.valueOf(result.getMsePerc()));
-      tfRMSE.setValue(String.valueOf(result.getRmse()));
-      tfMSE.setValue(String.valueOf(result.getMse()));
-      tfMAE.setValue(String.valueOf(result.getMae()));
+      tfMSEPerc.setValue(df.format(result.getMsePerc()));
+      tfRMSE.setValue(df.format(result.getRmse()));
+      tfMSE.setValue(df.format(result.getMse()));
+      tfMAE.setValue(df.format(result.getMae()));
 
       lhCoefficients.setAlpha(result.getAlpha());
       lhCoefficients.setBeta(result.getBeta());
@@ -237,7 +236,7 @@ class ModelContent extends ABaseContent {
         .withWidth(90, Sizeable.Unit.PERCENTAGE)
         .withHeight(90, Sizeable.Unit.PERCENTAGE);
 
-    if(!displayWindColumn)
+    if (!displayWindColumn)
       grid.removeColumn("windSpeed");
 
     grid.sort("date");
@@ -266,17 +265,13 @@ class ModelContent extends ABaseContent {
   }
 
   private Result calculate() {
-    double[] inputData =
-        (cxGroupMonthly.getValue()
-            ? WeatherAggregator.dailyToMonthy(modelBean.getEntries())
-            : modelBean.getEntries())
-        .stream().map(getDataTypeMapper())
-        .flatMapToDouble(value -> DoubleStream.of(value.doubleValue()))
-//        .limit(50)
-        .toArray();
+    List<WeatherStateData> dataList = cxGroupMonthly.getValue()
+        ? WeatherAggregator.dailyToMonthy(modelBean.getEntries())
+        : modelBean.getEntries();
 
     method = new HoltWinters();
-    method.calculate(inputData,
+    method.setTargetType(cxSolarStats.getValue() ? ETargetValues.SOLAR : ETargetValues.WIND);
+    method.calculate(dataList,
         lhCoefficients.getAlpha(),
         lhCoefficients.getBeta(),
         lhCoefficients.getGamma(),
@@ -287,12 +282,6 @@ class ModelContent extends ABaseContent {
     return method.getOptimalResult();
   }
 
-  private Function<WeatherStateData, Number> getDataTypeMapper() {
-    return cxSolarStats.getValue()
-        ? WeatherStateData::getGhi
-        : WeatherStateData::getWindSpeed;
-  }
-
   private void initFakeData() throws NoSuchObjectException {
     projectBean.switchProject(1L);
     modelBean.switchModel(1L);
@@ -300,7 +289,9 @@ class ModelContent extends ABaseContent {
 
 
   private void updateDataGrid() {
-    entriesGrid.setRows(modelBean.getEntries());
+    entriesGrid.setRows(modelBean.getEntries().stream().peek(
+        e -> e.setWindSpeed(Double.parseDouble(df.format(e.getWindSpeed())))
+    ).collect(Collectors.toList()));
   }
 
   private void redrawChart() {

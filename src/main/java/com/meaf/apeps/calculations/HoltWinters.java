@@ -1,11 +1,20 @@
 package com.meaf.apeps.calculations;
 
+import com.meaf.apeps.model.entity.WeatherStateData;
+import com.meaf.apeps.utils.ETargetValues;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
-public class HoltWinters implements Forecasting {
+import static com.meaf.apeps.utils.ETargetValues.SOLAR;
 
+public class HoltWinters {
+
+  List<WeatherStateData> inputData;
+  private ETargetValues targetType;
   private Result optimalResult;
   private double[]
       S,  // заданные значения
@@ -18,12 +27,20 @@ public class HoltWinters implements Forecasting {
       ErrorMSE, // среднеквадратическая ошибка
       ErrorMAE, // абсолютная ошибка
       Err; //Отклонение ошибки модели от прогнозной модели
-
   private double msePerc = -1; //среднеквадратическая ошибка модели(%)
   private double mseAvg = -1;  //среднеквадратическая ошибка модели
   private double maeAvg = -1;  //средняя абсолютная ошибка модели
 
-  public void calculate(double[] stats, Double alpha, Double betta, Double gamma, int period, int forecastLen){
+  public ETargetValues getTargetType() {
+    return targetType;
+  }
+
+  public void setTargetType(ETargetValues targetType) {
+    this.targetType = targetType;
+  }
+
+  public void calculate(List<WeatherStateData> stats, Double alpha, Double betta, Double gamma, int period, int forecastLen) {
+    inputData = stats;
     double aLowerLimit = alpha == null ? 0 : alpha;
     double aUpperLimit = alpha == null ? 1 : alpha;
 
@@ -45,7 +62,7 @@ public class HoltWinters implements Forecasting {
     for (double a = aLowerLimit; a <= aUpperLimit; a += step) {
       for (double b = bLowerLimit; b <= bUpperLimit; b += step) {
         for (double c = cLowerLimit; c <= cUpperLimit; c += step) {
-          forecast(stats, a, b, c, period, forecastLen);
+          forecast(extractData(stats), a, b, c, period, forecastLen);
           double newMSE = mseAvg;
           if (optimalMSE > newMSE) {
             optimalA = a;
@@ -61,12 +78,18 @@ public class HoltWinters implements Forecasting {
     optimalResult = new Result(optimalA, optimalB, optimalC, optimalMAE, optimalMSE, optimalMSEPerc);
   }
 
+  public double[] extractData(List<WeatherStateData> stats) {
+    return stats.stream().map(this.targetType.mapper)
+        .flatMapToDouble(value -> DoubleStream.of(value.doubleValue()))
+        .toArray();
+  }
+
   public Result getOptimalResult() {
     return optimalResult;
   }
 
-  public List<Double> getInputData() {
-    return Arrays.stream(S).boxed().collect(Collectors.toList());
+  public List<WeatherStateData> getInputData() {
+    return inputData;
   }
 
   public List<Double> getSmoothedData() {
@@ -144,10 +167,9 @@ public class HoltWinters implements Forecasting {
     return i < period ? 1 : Sts[i - period];
   }
 
-  private void calculateError(){
+  private void calculateError() {
     this.maeAvg = Arrays.stream(ErrorMAE).reduce(Double::sum).orElse(-1) / S.length;
     this.mseAvg = Arrays.stream(ErrorMSE).reduce(Double::sum).orElse(-1) / S.length;
     this.msePerc = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
   }
-
 }
