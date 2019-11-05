@@ -1,28 +1,26 @@
 package com.meaf.apeps.view.components;
 
 import com.meaf.apeps.calculations.HoltWinters;
-import com.meaf.apeps.model.entity.WeatherStateData;
+import com.meaf.apeps.utils.DatedValue;
 import com.meaf.apeps.utils.ETargetValues;
 import com.vaadin.addon.charts.Chart;
 import com.vaadin.addon.charts.examples.AbstractVaadinChartExample;
 import com.vaadin.addon.charts.model.*;
 import com.vaadin.ui.Component;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ModelChart extends AbstractVaadinChartExample {
 
   private static DecimalFormat df = new DecimalFormat("#.##");
 
-  private ETargetValues targetType;
-  private List<WeatherStateData> input = new ArrayList<>();
-  private List<Double> smoothed = new ArrayList<>();
-  private List<Double> model = new ArrayList<>();
+  private ETargetValues targetType = ETargetValues.SOLAR;
+  private List<DatedValue> input = new ArrayList<>();
+  private List<DatedValue> smoothed = new ArrayList<>();
+  private List<DatedValue> model = new ArrayList<>();
 
   public ModelChart(HoltWinters method) {
     super();
@@ -57,8 +55,13 @@ public class ModelChart extends AbstractVaadinChartExample {
     plotOptions.getDataLabels().setEnabled(true);
     configuration.setPlotOptions(plotOptions);
 
+    YAxis yAxis = configuration.getyAxis();
+    yAxis.setTitle(String.format("Power potential (%s)", targetType.units));
+//    yAxis.setFloor(0);
+
     XAxis xAxis = configuration.getxAxis();
     xAxis.setType(AxisType.DATETIME);
+    xAxis.setTitle("Date");
 
     Tooltip tooltip = configuration.getTooltip();
     tooltip.setEnabled(true);
@@ -73,35 +76,30 @@ public class ModelChart extends AbstractVaadinChartExample {
     legend.setBorderWidth(0);
 
     DataSeries input = new DataSeries();
-    fillInput(input);
+    fillDataSeries(this.input, input);
     input.setName("Input");
     configuration.addSeries(input);
 
     DataSeries smoothed = new DataSeries();
 
     smoothed.setName("Smoothed");
-    smoothed.setData(); //asNumbersList(this.smoothed)
+    fillDataSeries(this.smoothed, smoothed);
     configuration.addSeries(smoothed);
 
     DataSeries model = new DataSeries();
     model.setName("Model");
-    model.setData(); //asNumbersList(this.model)
+    fillDataSeries(this.model, model);
     configuration.addSeries(model);
 
     chart.drawChart(configuration);
     return chart;
   }
 
-  private void fillInput(DataSeries input) {
-    this.input.stream().forEach(i -> input.add(new DataSeriesItem(i.getDate(), targetType.mapper.apply(i))));
+  private void fillDataSeries(List<DatedValue> srcList, DataSeries ds) {
+    srcList.forEach(i -> ds.add(new DataSeriesItem(i.getDate(), pretty(i.getNumber()))));
   }
 
-  private Instant dateOf(WeatherStateData i) {
-    return new Date(i.getDate().getTime()).toInstant();
+  private Number pretty(Number number) {
+    return new BigDecimal(number.doubleValue()).setScale(2, BigDecimal.ROUND_HALF_DOWN);
   }
-
-  private List<Number> asNumbersList(List<Double> input) {
-    return input.stream().map(d -> Double.parseDouble(df.format(d))).map(d -> (Number) d).collect(Collectors.toList());
-  }
-
 }

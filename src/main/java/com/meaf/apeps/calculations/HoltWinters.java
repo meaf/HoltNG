@@ -1,22 +1,24 @@
 package com.meaf.apeps.calculations;
 
 import com.meaf.apeps.model.entity.WeatherStateData;
+import com.meaf.apeps.utils.DatedValue;
 import com.meaf.apeps.utils.ETargetValues;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
-import static com.meaf.apeps.utils.ETargetValues.SOLAR;
-
 public class HoltWinters {
 
-  List<WeatherStateData> inputData;
   private ETargetValues targetType;
   private Result optimalResult;
-  private double[]
+  private List<DatedValue> inputData,
       S,  // заданные значения
       Lt, //экспоненциально сглаженный ряд
       Tt, //значение тренда
@@ -40,7 +42,7 @@ public class HoltWinters {
   }
 
   public void calculate(List<WeatherStateData> stats, Double alpha, Double betta, Double gamma, int period, int forecastLen) {
-    inputData = stats;
+    inputData = stats.stream().map(s -> new DatedValue(s.getDate(), targetType.mapper.apply(s))).collect(Collectors.toList());
     double aLowerLimit = alpha == null ? 0 : alpha;
     double aUpperLimit = alpha == null ? 1 : alpha;
 
@@ -62,7 +64,7 @@ public class HoltWinters {
     for (double a = aLowerLimit; a <= aUpperLimit; a += step) {
       for (double b = bLowerLimit; b <= bUpperLimit; b += step) {
         for (double c = cLowerLimit; c <= cUpperLimit; c += step) {
-          forecast(extractData(stats), a, b, c, period, forecastLen);
+          forecast(a, b, c, period, forecastLen);
           double newMSE = mseAvg;
           if (optimalMSE > newMSE) {
             optimalA = a;
@@ -88,88 +90,96 @@ public class HoltWinters {
     return optimalResult;
   }
 
-  public List<WeatherStateData> getInputData() {
+  public List<DatedValue> getInputData() {
     return inputData;
   }
 
-  public List<Double> getSmoothedData() {
-    return Arrays.stream(Lt).boxed().collect(Collectors.toList());
+  public List<DatedValue> getSmoothedData() {
+    return Lt;
   }
 
-  public List<Double> getFcData() {
-    List<Double> result = Arrays.stream(FcEstimated).boxed().collect(Collectors.toList());
-    result.addAll(Arrays.stream(Fc).boxed().collect(Collectors.toList()));
+  public List<DatedValue> getFcData() {
+    List<DatedValue> result = new ArrayList<>();
+    result.addAll(FcEstimated);
+    result.addAll(Fc);
     return result;
   }
 
-  private void forecast(double[] inputArray,
-                        double alpha,
+  private void forecast(double alpha,
                         double beta,
                         double gamma,
                         int period,
                         int forecastLen) {
 
-    S = inputArray;
+    S = inputData;
     initValues(forecastLen);
 
-    for (int i = 1; i < S.length; i++)
+    for (int i = 1; i < S.size(); i++)
       calculateStep(alpha, beta, gamma, period, i);
 
-    for (int i = S.length; i < S.length + forecastLen; i++)
+    for (int i = S.size(); i < S.size() + forecastLen; i++)
       calculateForecastStep(period, i);
 
     calculateError();
   }
 
   private void initValues(int forecastLen) {
-    int resultedLen = S.length + forecastLen;
-    Fc = new double[forecastLen];
+    int resultedLen = S.size() + forecastLen;
+    Fc = new ArrayList<>(forecastLen);
 
-    Lt = new double[S.length];
-    Tt = new double[S.length];
-    Sts = new double[S.length];
-    Err = new double[S.length];
-    FcEstimated = new double[S.length];
-    ErrorPerc = new double[S.length];
-    ErrorMSE = new double[S.length];
-    ErrorMAE = new double[S.length];
+    Lt = new ArrayList<>(S.size());
+    Tt = new ArrayList<>(S.size());
+    Sts = new ArrayList<>(S.size());
+    Err = new ArrayList<>(S.size());
+    FcEstimated = new ArrayList<>(S.size());
+    ErrorPerc = new ArrayList<>(S.size());
+    ErrorMSE = new ArrayList<>(S.size());
+    ErrorMAE = new ArrayList<>(S.size());
 
-    Lt[0] = S[0];
-    Tt[0] = 0;
-    Sts[0] = 1;
-    Fc[0] = 0;
-    Err[0] = 0;
-    FcEstimated[0] = Lt[0];
-    ErrorPerc[0] = 0;
+
+    Lt.add(0, S.get(0));
+    Tt.add(0, new DatedValue(S.get(0).getDate(), 0));
+    Sts.add(0, new DatedValue(S.get(0).getDate(), 1));
+//    Fc.add(0, new DatedValue(S.get(0).getDate(), 0));
+    Err.add(0, new DatedValue(S.get(0).getDate(), 0));
+    FcEstimated.add(0, Lt.get(0));
+    ErrorPerc.add(0, new DatedValue(S.get(0).getDate(), 0));
+    ErrorMAE.add(0, new DatedValue(S.get(0).getDate(), 0));
+    ErrorMSE.add(0, new DatedValue(S.get(0).getDate(), 0));
   }
 
   private void calculateStep(double alpha, double beta, double gamma, int period, int i) {
-    Lt[i] = alpha * S[i] / getSeasonalK(i, period) + ((1 - alpha) * (Lt[i - 1] + Tt[i - 1]));
-    Tt[i] = beta * (Lt[i] - Lt[i - 1]) + ((1 - beta) * Tt[i - 1]);
-    Sts[i] = i <= period
-        ? 1
-        : gamma * S[i] / Lt[i] + ((1 - gamma) * getSeasonalK(i, period));
+    Date date = S.get(i).getDate();
 
-    FcEstimated[i] = (Lt[i - 1] + Tt[i - 1]) * getSeasonalK(i, period);
-    Err[i] = S[i] - FcEstimated[i];
-    ErrorMAE[i] = Math.abs(Err[i]);
-    ErrorMSE[i] = (Err[i] * Err[i]);
-    ErrorPerc[i] = ErrorMSE[i] / (S[i] * S[i]);
+    Lt.add(i, new DatedValue(date, alpha * S.get(i).asDouble() / getSeasonalK(i, period) + ((1 - alpha) * (Lt.get(i - 1).asDouble() + Tt.get(i - 1).asDouble()))));
+    Tt.add(i, new DatedValue(date, beta * (Lt.get(i).asDouble() - Lt.get(i - 1).asDouble()) + ((1 - beta) * Tt.get(i - 1).asDouble())));
+    Sts.add(i, new DatedValue(date, i <= period
+        ? 1
+        : gamma * S.get(i).asDouble() / Lt.get(i).asDouble() + ((1 - gamma) * getSeasonalK(i, period))));
+
+    FcEstimated.add(i, new DatedValue (date, (Lt.get(i - 1).asDouble() + Tt.get(i - 1).asDouble()) * getSeasonalK(i, period)));
+    Err.add(i, new DatedValue(date, S.get(i).asDouble() - FcEstimated.get(i).asDouble()));
+    ErrorMAE.add(i, new DatedValue(date, Math.abs(Err.get(i).asDouble())));
+    ErrorMSE.add(i, new DatedValue(date, Err.get(i).asDouble() * Err.get(i).asDouble()));
+    ErrorPerc.add(i, new DatedValue(date, ErrorMSE.get(i).asDouble() / (S.get(i).asDouble() * S.get(i).asDouble())));
   }
 
   private void calculateForecastStep(int period, int i) {
-    int p = i - S.length + 1;
-    int lastSequenceValueInd = S.length - 1;
-    Fc[p - 1] = (Lt[lastSequenceValueInd] + Tt[lastSequenceValueInd] * p) * Sts[i - period];
+    int lastSequenceValueInd = S.size() - 1;
+    int fcPointNumber = i - S.size() + 1;
+    Date lastDate = S.get(lastSequenceValueInd).getDate();
+    LocalDate now = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(fcPointNumber);
+
+    Fc.add(fcPointNumber - 1, new DatedValue(now, (Lt.get(lastSequenceValueInd).asDouble() + Tt.get(lastSequenceValueInd).asDouble() * fcPointNumber) * Sts.get(i - period).asDouble()));
   }
 
   private double getSeasonalK(int i, int period) {
-    return i < period ? 1 : Sts[i - period];
+    return i < period ? 1 : Sts.get(i - period).asDouble();
   }
 
   private void calculateError() {
-    this.maeAvg = Arrays.stream(ErrorMAE).reduce(Double::sum).orElse(-1) / S.length;
-    this.mseAvg = Arrays.stream(ErrorMSE).reduce(Double::sum).orElse(-1) / S.length;
-    this.msePerc = Arrays.stream(ErrorPerc).reduce(Double::sum).orElse(-1) / S.length;
+    this.maeAvg = ErrorMAE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
+    this.mseAvg = ErrorMSE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
+    this.msePerc = ErrorPerc.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
   }
 }
