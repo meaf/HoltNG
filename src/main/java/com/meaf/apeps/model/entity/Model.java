@@ -24,7 +24,7 @@ public class Model extends ABaseEntity {
     private BigDecimal beta;
     @Column(name="gamma", precision = 8, scale = 5)
     private BigDecimal gamma;
-    @Column(name="mse", precision = 8, scale = 5)
+    @Column(name="mse", precision = 15, scale = 5)
     private BigDecimal mse;
     @Column
     private Integer period;

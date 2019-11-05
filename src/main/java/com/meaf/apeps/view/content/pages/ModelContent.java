@@ -3,7 +3,7 @@ package com.meaf.apeps.view.content.pages;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
-import com.meaf.apeps.input.csv.CSVFileReciever;
+import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
@@ -73,12 +73,10 @@ class ModelContent extends ABaseContent {
 
     Button btnCalculate = createCalculateButton();
     Button btnSaveResults = createSaveButton();
+    Button btnClear = createClearButton();
 
     lhCoefficients = new CoefficientsBar(modelBean.getModel());
-    lhCoefficients.add(btnCalculate);
-    lhCoefficients.add(btnSaveResults);
-    lhCoefficients.setComponentAlignment(btnCalculate, Alignment.BOTTOM_LEFT);
-    lhCoefficients.setComponentAlignment(btnSaveResults, Alignment.BOTTOM_LEFT);
+    lhCoefficients.addButtons(btnCalculate, btnSaveResults, btnClear);
 
     tfMSE.setCaption("MSE");
     tfMSE.setEnabled(false);
@@ -133,38 +131,61 @@ class ModelContent extends ABaseContent {
         data
     );
     updateDataGrid();
+    try {
+      calculate();
+    } catch (IllegalArgumentException ex) {
+      ex.printStackTrace();
+    }
     return content;
+  }
+
+  private Button createClearButton() {
+    Button btnClear = new Button("Clear");
+    btnClear.addClickListener(e -> lhCoefficients.reset());
+    return btnClear;
   }
 
   private Button createUpdateButton() {
     Button updButton = new Button("Update");
     updButton.addClickListener(e -> {
-      List<WeatherStateData> weatherStateDataList = requestHttpUpdate.requestUpdate();
+      List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate());
       if (weatherStateDataList == null) {
         showErrorNotification("Http update error", "could not communicate to data sever");
         return;
       }
+      if (weatherStateDataList.isEmpty())
+        showSuccessNotification("Everything is up-to-date", "nothing to update");
+
       createNewDataWindow(updButton, weatherStateDataList, false);
     });
 
     return updButton;
   }
 
+  private List<WeatherStateData> returnOnlyMissingValues(List<WeatherStateData> weatherStateDataList) {
+    List<WeatherStateData> entries = modelBean.getEntries();
+    return weatherStateDataList.stream().filter(e -> isDataMissing(entries, e)).collect(Collectors.toList());
+  }
+
+  private boolean isDataMissing(List<WeatherStateData> entries, WeatherStateData stateData) {
+    return entries.stream().noneMatch(e -> e.asDayUnit().equals(stateData.asDayUnit()));
+  }
+
   private Upload createUploadButton() {
-    CSVFileReciever fileReciever = new CSVFileReciever();
+    CSVFileReceiver fileReceiver = new CSVFileReceiver();
 
-    fileReciever.setDateScope(DateUtils.asSqlDate(new Date(107, Calendar.JANUARY, 2))); //TODO
+    fileReceiver.setDateScope(DateUtils.asSqlDate(new Date(107, Calendar.JANUARY, 2))); //TODO
 
-    Upload uploadBtn = new Upload(null, fileReciever);
+    Upload uploadBtn = new Upload(null, fileReceiver);
     uploadBtn.setImmediateMode(false);
     uploadBtn.setButtonCaption("Upload File");
 
-    UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReciever);
+    UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReceiver);
 
     uploadBtn.addStartedListener(event -> {
       if ("".equals(event.getFilename()) || event.getContentLength() == 0)
         return;
-      fileReciever.reset();
+      fileReceiver.reset();
       if (uploadInfoWindow.getParent() == null) {
         UI.getCurrent().addWindow(uploadInfoWindow);
       }
@@ -172,36 +193,33 @@ class ModelContent extends ABaseContent {
     });
     uploadBtn.addFinishedListener(event -> {
       uploadInfoWindow.setClosable(true);
-      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults(), false));
+      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults(), true));
     });
     return uploadBtn;
   }
 
   private Button createCalculateButton() {
     return new Button("Calculate", e -> {
-//      changeState(StateBean.EState.Login);
-      Result result = calculate();
-
-      tfMSEPerc.setValue(df.format(result.getMsePerc()));
-      tfRMSE.setValue(df.format(result.getRmse()));
-      tfMSE.setValue(df.format(result.getMse()));
-      tfMAE.setValue(df.format(result.getMae()));
-
-      lhCoefficients.setAlpha(result.getAlpha());
-      lhCoefficients.setBeta(result.getBeta());
-      lhCoefficients.setGamma(result.getGamma());
+      try {
+        calculate();
+      } catch (IllegalArgumentException ex) {
+        ex.printStackTrace();
+      }
     });
   }
 
   private Button createSaveButton() {
     return new Button("Save results", e -> {
-      Result result = calculate();
-
-      tfMSE.setValue(String.valueOf(result.getMse()));
+      try {
+        calculate();
+      } catch (IllegalArgumentException ex) {
+        ex.printStackTrace();
+        return;
+      }
       modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
       modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
       modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
-      modelBean.getModel().setMse(new BigDecimal(result.getMse()));
+      modelBean.getModel().setMse(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
       modelBean.saveModel();
 
       showSuccessNotification("Success", "Model params are saved");
@@ -264,7 +282,12 @@ class ModelContent extends ABaseContent {
 
   }
 
-  private Result calculate() {
+  private void calculate() {
+
+    if (!lhCoefficients.check()) {
+      throw new IllegalArgumentException();
+    }
+
     List<WeatherStateData> dataList = cxGroupMonthly.getValue()
         ? WeatherAggregator.dailyToMonthy(modelBean.getEntries())
         : modelBean.getEntries();
@@ -278,8 +301,18 @@ class ModelContent extends ABaseContent {
         lhCoefficients.getPeriod(),
         lhCoefficients.getForecastPoints());
 
+    Result result = method.getOptimalResult();
+
+    tfMSEPerc.setValue(df.format(result.getMsePerc()));
+    tfRMSE.setValue(df.format(result.getRmse()));
+    tfMSE.setValue(df.format(result.getMse()));
+    tfMAE.setValue(df.format(result.getMae()));
+
+    lhCoefficients.setAlpha(result.getAlpha());
+    lhCoefficients.setBeta(result.getBeta());
+    lhCoefficients.setGamma(result.getGamma());
+
     redrawChart();
-    return method.getOptimalResult();
   }
 
   private void initFakeData() throws NoSuchObjectException {

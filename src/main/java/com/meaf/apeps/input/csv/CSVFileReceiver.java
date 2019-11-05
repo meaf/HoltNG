@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CSVFileReciever implements Upload.Receiver {
+public class CSVFileReceiver implements Upload.Receiver {
   IWeatherParser parser = new CSVRowParser();
   private static final String header = "PeriodEnd,PeriodStart,Period,CloudOpacity,Dhi,Dni,Ebh,Ghi,WindDirection10m,WindSpeed10m";
   private static final int endLineByte = '\n';

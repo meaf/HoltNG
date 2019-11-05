@@ -1,7 +1,7 @@
 package com.meaf.apeps.view.components;
 
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
-import com.meaf.apeps.input.csv.CSVFileReciever;
+import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.vaadin.annotations.StyleSheet;
 import com.vaadin.ui.*;
@@ -21,12 +21,12 @@ public class UploadInfoWindow extends Window implements
   private final ProgressBar progressBar = new ProgressBar();
   private final Button cancelButton;
   private final Button showResults;
-  private final CSVFileReciever csvReciever;
+  private final CSVFileReceiver csvReceiver;
   private List<WeatherStateData> groupedData;
 
-  public UploadInfoWindow(final Upload upload, final CSVFileReciever reciever) {
+  public UploadInfoWindow(final Upload upload, final CSVFileReceiver reciever) {
     super("Status");
-    this.csvReciever = reciever;
+    this.csvReceiver = reciever;
 
     addStyleName("upload-info");
 
@@ -87,14 +87,14 @@ public class UploadInfoWindow extends Window implements
   }
 
   private void groupData() {
-    if(csvReciever.getLoadedRows().isEmpty()) {
+    if(csvReceiver.getLoadedRows().isEmpty()) {
       state.setValue("No valid data found");
       return;
     }
     state.setValue("Grouping data...");
     progressBar.reset();
-    groupedData = WeatherAggregator.hourlyToDaily(csvReciever.parseRows(), WeatherAggregator.EDataSource.csv);
-    result.setValue(String.format("%s (resulted in %s complete day(s))", csvReciever.getLoadedRows().size(), groupedData.size()));
+    groupedData = WeatherAggregator.hourlyToDaily(csvReceiver.parseRows(), WeatherAggregator.EDataSource.csv);
+    result.setValue(String.format("%s (resulted in %s complete day(s))", csvReceiver.getLoadedRows().size(), groupedData.size()));
     state.setValue("Finished!");
   }
 
@@ -118,17 +118,17 @@ public class UploadInfoWindow extends Window implements
     // this method gets called several times during the update
     progressBar.setValue(readBytes / (float) contentLength);
     textualProgress.setValue("Uploaded " + readBytes + " bytes of " + contentLength);
-    result.setValue(csvReciever.getLoadedRows().size() + " (counting rows...)");
+    result.setValue(csvReceiver.getLoadedRows().size() + " (counting rows...)");
   }
 
   @Override
   public void uploadSucceeded(final Upload.SucceededEvent event) {
-    result.setValue(csvReciever.getLoadedRows().size() + " (total rows)");
+    result.setValue(csvReceiver.getLoadedRows().size() + " (total rows)");
   }
 
   @Override
   public void uploadFailed(final Upload.FailedEvent event) {
-    result.setValue(csvReciever.getLoadedRows().size()
+    result.setValue(csvReceiver.getLoadedRows().size()
         + " (counting interrupted at "
         + Math.round(100 * progressBar.getValue()) + "%)");
   }

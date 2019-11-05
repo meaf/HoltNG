@@ -87,7 +87,7 @@ public class WeatherAggregator {
 
   private static WeatherStateData accumulate(WeatherStateData acc, WeatherStateData src) {
 
-    acc.setDate(src.getDate());
+    acc.setDate(src.asDayUnit());
     acc.setDhi(Math.addExact(acc.getDhi(), src.getDhi()));
     acc.setDni(Math.addExact(acc.getDni(), src.getDni()));
     acc.setGhi(Math.addExact(acc.getGhi(), src.getGhi()));
