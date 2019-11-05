@@ -2,18 +2,25 @@ package com.meaf.apeps.input.http;
 
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.IWeatherParser;
+import com.meaf.apeps.model.entity.LocationKey;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class HttpSenderTest {
   @Test
   @Ignore
   public void testConnection() {
-    HttpResponse response = HttpSender.sendUpdateRequest();
+    LocationKey key = new LocationKey();
+    key.setApiKey("nhaoKZ3xZT1tGQLKhq-ibcWyVRUcHsRh");
+    key.setSiteId("3faa-0298-d8db-463f");
+
+    HttpResponse response = HttpSender.sendUpdateRequest(Collections.singletonList(key));
 
     Assert.assertNotNull(response);
     Assert.assertFalse(response.isError());

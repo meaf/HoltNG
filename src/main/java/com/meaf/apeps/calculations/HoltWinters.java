@@ -43,6 +43,8 @@ public class HoltWinters {
 
   public void calculate(List<WeatherStateData> stats, Double alpha, Double betta, Double gamma, int period, int forecastLen) {
     inputData = stats.stream().map(s -> new DatedValue(s.getDate(), targetType.mapper.apply(s))).collect(Collectors.toList());
+    if(inputData.isEmpty())
+      return;
     double aLowerLimit = alpha == null ? 0 : alpha;
     double aUpperLimit = alpha == null ? 1 : alpha;
 

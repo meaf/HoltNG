@@ -5,10 +5,10 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "systemProperty")
+@Table(name = "system_properties")
 public class SystemProperty extends ABaseEntity{
 
-  @Column
+  @Column(unique = true)
   private String name;
   @Column
   private String value;

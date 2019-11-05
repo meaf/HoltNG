@@ -1,21 +1,30 @@
 package com.meaf.apeps.view.content.pages;
 
+import com.google.gwt.maps.client.overlays.Circle;
+import com.google.gwt.maps.client.overlays.CircleOptions;
+import com.google.gwt.maps.client.overlays.Polygon;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
+import com.meaf.apeps.model.entity.Location;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
+import com.meaf.apeps.view.beans.LocationBean;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.ProjectBean;
+import com.meaf.apeps.view.beans.PropertiesBean;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.meaf.apeps.view.components.ModelChart;
 import com.meaf.apeps.view.components.UploadInfoWindow;
 import com.vaadin.server.Page;
 import com.vaadin.server.Sizeable;
 import com.vaadin.shared.Position;
+import com.vaadin.tapio.googlemaps.GoogleMap;
+import com.vaadin.tapio.googlemaps.client.LatLon;
+import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapPolygon;
 import com.vaadin.ui.*;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.components.DisclosurePanel;
@@ -40,7 +49,10 @@ class ModelContent extends ABaseContent {
 
   private static DecimalFormat df = new DecimalFormat("#.####");
   private final ModelBean modelBean;
+  private final LocationBean locationBean;
   private final ProjectBean projectBean;
+  private final PropertiesBean propertiesBean;
+
   private final RequestHttpUpdate requestHttpUpdate;
   private HoltWinters method;
   private MGrid<WeatherStateData> entriesGrid = new MGrid<>(WeatherStateData.class)
@@ -57,9 +69,11 @@ class ModelContent extends ABaseContent {
   private MCheckBox cxSolarStats = new MCheckBox("Solar energy", true);
   private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly", true);
 
-  public ModelContent(ModelBean modelBean, ProjectBean projectBean, RequestHttpUpdate requestHttpUpdate) {
+  public ModelContent(ModelBean modelBean, LocationBean locationBean, ProjectBean projectBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
+    this.locationBean = locationBean;
     this.projectBean = projectBean;
+    this.propertiesBean = propertiesBean;
     this.requestHttpUpdate = requestHttpUpdate;
   }
 
@@ -125,7 +139,7 @@ class ModelContent extends ABaseContent {
     data.setExpandRatio(dataTableOptions, 2);
     data.setExpandRatio(calculations, 7);
 
-    DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()));
+    DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()), getMap());
     MVerticalLayout content = new MVerticalLayout(
         aboutBox,
         data
@@ -133,10 +147,25 @@ class ModelContent extends ABaseContent {
     updateDataGrid();
     try {
       calculate();
-    } catch (IllegalArgumentException ex) {
+    } catch (Exception ex) {
       ex.printStackTrace();
     }
     return content;
+  }
+
+  private GoogleMap getMap() {
+    GoogleMap googleMap = new GoogleMap(propertiesBean.getMapsKey(), null, "english");
+    googleMap.setSizeFull();
+
+    Location location = locationBean.getCurrentLocation();
+    LatLon latLon = new LatLon(location.getLatitude().doubleValue(), location.getLongitude().doubleValue());
+
+
+    googleMap.addMarker(location.getName(), latLon, false, null);
+    googleMap.setCenter(latLon);
+    googleMap.setMinZoom(4);
+    googleMap.setMaxZoom(16);
+    return googleMap;
   }
 
   private Button createClearButton() {
@@ -148,7 +177,7 @@ class ModelContent extends ABaseContent {
   private Button createUpdateButton() {
     Button updButton = new Button("Update");
     updButton.addClickListener(e -> {
-      List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate());
+      List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocationId()));
       if (weatherStateDataList == null) {
         showErrorNotification("Http update error", "could not communicate to data sever");
         return;
@@ -193,7 +222,7 @@ class ModelContent extends ABaseContent {
     });
     uploadBtn.addFinishedListener(event -> {
       uploadInfoWindow.setClosable(true);
-      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, uploadInfoWindow.getResults(), true));
+      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, returnOnlyMissingValues(uploadInfoWindow.getResults()), true));
     });
     return uploadBtn;
   }
@@ -267,6 +296,7 @@ class ModelContent extends ABaseContent {
       modelBean.mergeEntries(data);
       showSuccessNotification("Merged", data.size() + " entries were added to model");
       updateDataGrid();
+      window.close();
     });
 
     MVerticalLayout layout = new MVerticalLayout(
@@ -283,14 +313,16 @@ class ModelContent extends ABaseContent {
   }
 
   private void calculate() {
-
-    if (!lhCoefficients.check()) {
+    if (!lhCoefficients.check())
       throw new IllegalArgumentException();
-    }
+
+    List<WeatherStateData> entries = modelBean.getEntries();
+    if (entries.isEmpty())
+      throw new IllegalArgumentException();
 
     List<WeatherStateData> dataList = cxGroupMonthly.getValue()
-        ? WeatherAggregator.dailyToMonthy(modelBean.getEntries())
-        : modelBean.getEntries();
+        ? WeatherAggregator.dailyToMonthy(entries)
+        : entries;
 
     method = new HoltWinters();
     method.setTargetType(cxSolarStats.getValue() ? ETargetValues.SOLAR : ETargetValues.WIND);
@@ -318,6 +350,7 @@ class ModelContent extends ABaseContent {
   private void initFakeData() throws NoSuchObjectException {
     projectBean.switchProject(1L);
     modelBean.switchModel(1L);
+    locationBean.setLocation(modelBean.getModel().getLocationId());
   }
 
 
