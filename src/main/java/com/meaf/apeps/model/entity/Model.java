@@ -1,8 +1,8 @@
 package com.meaf.apeps.model.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import org.hibernate.annotations.Formula;
+
+import javax.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
@@ -15,8 +15,9 @@ public class Model extends ABaseEntity {
   private String description;
   @Column
   private Long projectId;
-  @Column
-  private Long locationId;
+  @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+  @JoinColumn(name = "location_id", nullable = false)
+  private Location location;
   @Column(name = "alpha", precision = 8, scale = 5)
   private BigDecimal alpha;
   @Column(name = "beta", precision = 8, scale = 5)
@@ -27,7 +28,17 @@ public class Model extends ABaseEntity {
   private BigDecimal mse;
   @Column
   private Integer period;
+  @Formula("(select avg(d.ghi) from weather_state_data d where d.model_id = id)")
+  private Double avgGhi;
+  @Formula("(select avg(d.wind_speed) from weather_state_data d where d.model_id = id)")
+  private Double avgWindSpeed;
+  @Column
+  private Double windSpeedForecast;
+  @Column
+  private Double ghiForecastForecast;
 
+  @Formula("(select count(*) from weather_state_data d where d.model_id = id)")
+  private Double dataAmount;
 
   public String getName() {
     return name;
@@ -93,11 +104,47 @@ public class Model extends ABaseEntity {
     this.period = period;
   }
 
-  public Long getLocationId() {
-    return locationId;
+  public Location getLocation() {
+    return location;
   }
 
-  public void setLocationId(Long locationId) {
-    this.locationId = locationId;
+  public void setLocation(Location location) {
+    this.location = location;
+  }
+
+  public Double getAvgGhi() {
+    return avgGhi;
+  }
+
+  public void setAvgGhi(Double avgGhi) {
+    this.avgGhi = avgGhi;
+  }
+
+  public Double getAvgWindSpeed() {
+    return avgWindSpeed;
+  }
+
+  public void setAvgWindSpeed(Double avgWindSpeed) {
+    this.avgWindSpeed = avgWindSpeed;
+  }
+
+  public Double getWindSpeedForecast() {
+    return windSpeedForecast;
+  }
+
+  public void setWindSpeedForecast(Double windSpeedForecast) {
+    this.windSpeedForecast = windSpeedForecast;
+  }
+
+  public Double getGhiForecastForecast() {
+    return ghiForecastForecast;
+  }
+
+  public void setGhiForecastForecast(Double ghiForecastForecast) {
+    this.ghiForecastForecast = ghiForecastForecast;
+  }
+
+  public Double getDataAmount() {
+    return dataAmount;
   }
 }

@@ -181,7 +181,7 @@ public class ModelContent extends ABaseContent {
   private Button createUpdateButton() {
     Button updButton = new Button("Update");
     updButton.addClickListener(e -> {
-      List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocationId()));
+      List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocation().getId()));
       if (weatherStateDataList == null) {
         showErrorNotification("Http update error", "could not communicate to data sever");
         return;
@@ -395,7 +395,7 @@ public class ModelContent extends ABaseContent {
   private void initFakeData() throws NoSuchObjectException {
     projectBean.switchProject(1L);
     modelBean.switchModel(1L);
-    locationBean.setLocation(modelBean.getModel().getLocationId());
+    locationBean.setLocation(modelBean.getModel().getLocation().getId());
   }
 
 

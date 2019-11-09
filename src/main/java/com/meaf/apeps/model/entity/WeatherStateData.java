@@ -9,7 +9,7 @@ import javax.persistence.Transient;
 import java.sql.Date;
 
 @Entity
-@Table(name = "weatherStateData")
+@Table(name = "weather_state_data")
 public class WeatherStateData extends ABaseEntity {
 
   @Column

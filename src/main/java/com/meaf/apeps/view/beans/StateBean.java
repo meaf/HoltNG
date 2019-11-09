@@ -8,13 +8,12 @@ import org.springframework.web.context.annotation.SessionScope;
 public class StateBean {
 
   public enum EState{
-    Login,
     Undefined,
     Project,
     Model,
   }
 
-  private EState state = EState.Model;
+  private EState state = EState.Project;
 
   public EState getState() {
     return state;

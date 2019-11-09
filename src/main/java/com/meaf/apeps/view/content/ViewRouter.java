@@ -1,10 +1,9 @@
 package com.meaf.apeps.view.content;
 
 import com.meaf.apeps.view.beans.StateBean;
-import com.meaf.apeps.view.content.pages.LoginContent;
 import com.meaf.apeps.view.content.pages.ModelContent;
+import com.meaf.apeps.view.content.pages.ProjectContent;
 import com.meaf.apeps.view.events.StateChangeEvent;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
@@ -13,14 +12,14 @@ public class ViewRouter implements ApplicationListener<StateChangeEvent> {
 
   private final StateBean stateBean;
   private final ModelContent modelContent;
-  private final LoginContent loginContent;
+  private final ProjectContent projectContent;
 
   private BaseContentHolder holder;
 
-  public ViewRouter(StateBean stateBean, ModelContent modelContent, LoginContent loginContent) {
+  public ViewRouter(StateBean stateBean, ModelContent modelContent, ProjectContent projectContent) {
     this.stateBean = stateBean;
     this.modelContent = modelContent;
-    this.loginContent = loginContent;
+    this.projectContent = projectContent;
   }
 
   public void route() {
@@ -31,8 +30,8 @@ public class ViewRouter implements ApplicationListener<StateChangeEvent> {
     switch (stateBean.getState()) {
       case Model:
         return modelContent.getContent();
-      case Login:
-        return loginContent.getContent();
+      case Project:
+        return projectContent.getContent();
       default:
         throw new IllegalStateException("illegal state");
     }

@@ -9,7 +9,7 @@ import javax.persistence.Table;
 public class Project extends ABaseEntity {
 
   @Column
-  private Boolean isPrivate;
+  private Boolean privateProject;
   @Column
   private String name;
   @Column
@@ -32,11 +32,11 @@ public class Project extends ABaseEntity {
     this.description = description;
   }
 
-  public Boolean getPrivate() {
-    return isPrivate;
+  public Boolean getPrivateProject() {
+    return privateProject;
   }
 
-  public void setPrivate(Boolean aPrivate) {
-    isPrivate = aPrivate;
+  public void setPrivateProject(Boolean privateProject) {
+    this.privateProject = privateProject;
   }
 }
