@@ -1,6 +1,6 @@
 package com.meaf.apeps.calculations.aggregate;
 
-import com.meaf.apeps.model.entity.TimelessDate;
+import com.meaf.apeps.model.TimelessDate;
 import com.meaf.apeps.model.entity.WeatherStateData;
 
 import java.util.Comparator;

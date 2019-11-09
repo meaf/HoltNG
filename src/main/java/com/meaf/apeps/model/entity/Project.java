@@ -9,13 +9,11 @@ import javax.persistence.Table;
 public class Project extends ABaseEntity {
 
   @Column
+  private Boolean isPrivate;
+  @Column
   private String name;
-
   @Column
   private String description;
-
-  @Column
-  private Long userId;
 
 
   public String getName() {
@@ -34,11 +32,11 @@ public class Project extends ABaseEntity {
     this.description = description;
   }
 
-  public Long getUserId() {
-    return userId;
+  public Boolean getPrivate() {
+    return isPrivate;
   }
 
-  public void setUserId(Long userId) {
-    this.userId = userId;
+  public void setPrivate(Boolean aPrivate) {
+    isPrivate = aPrivate;
   }
 }

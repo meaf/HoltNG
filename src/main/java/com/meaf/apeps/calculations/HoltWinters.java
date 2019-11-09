@@ -6,9 +6,7 @@ import com.meaf.apeps.utils.ETargetValues;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +30,7 @@ public class HoltWinters {
   private double msePerc = -1; //среднеквадратическая ошибка модели(%)
   private double mseAvg = -1;  //среднеквадратическая ошибка модели
   private double maeAvg = -1;  //средняя абсолютная ошибка модели
+  private EDateInterval dateInterval;
 
   public ETargetValues getTargetType() {
     return targetType;
@@ -43,7 +42,7 @@ public class HoltWinters {
 
   public void calculate(List<WeatherStateData> stats, Double alpha, Double betta, Double gamma, int period, int forecastLen) {
     inputData = stats.stream().map(s -> new DatedValue(s.getDate(), targetType.mapper.apply(s))).collect(Collectors.toList());
-    if(inputData.isEmpty())
+    if (inputData.isEmpty())
       return;
     double aLowerLimit = alpha == null ? 0 : alpha;
     double aUpperLimit = alpha == null ? 1 : alpha;
@@ -159,7 +158,7 @@ public class HoltWinters {
         ? 1
         : gamma * S.get(i).asDouble() / Lt.get(i).asDouble() + ((1 - gamma) * getSeasonalK(i, period))));
 
-    FcEstimated.add(i, new DatedValue (date, (Lt.get(i - 1).asDouble() + Tt.get(i - 1).asDouble()) * getSeasonalK(i, period)));
+    FcEstimated.add(i, new DatedValue(date, (Lt.get(i - 1).asDouble() + Tt.get(i - 1).asDouble()) * getSeasonalK(i, period)));
     Err.add(i, new DatedValue(date, S.get(i).asDouble() - FcEstimated.get(i).asDouble()));
     ErrorMAE.add(i, new DatedValue(date, Math.abs(Err.get(i).asDouble())));
     ErrorMSE.add(i, new DatedValue(date, Err.get(i).asDouble() * Err.get(i).asDouble()));
@@ -183,5 +182,17 @@ public class HoltWinters {
     this.maeAvg = ErrorMAE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
     this.mseAvg = ErrorMSE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
     this.msePerc = ErrorPerc.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
+  }
+
+  public EDateInterval getDateInterval() {
+    return dateInterval;
+  }
+
+  public void setDateInterval(EDateInterval dateInterval) {
+    this.dateInterval = dateInterval;
+  }
+
+  public enum EDateInterval {
+    MONTHLY, DAILY;
   }
 }

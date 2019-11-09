@@ -1,5 +1,7 @@
 package com.meaf.apeps.model.entity;
 
+import com.meaf.apeps.model.TimelessDate;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -9,8 +11,7 @@ import java.sql.Date;
 @Entity
 @Table(name = "weatherStateData")
 public class WeatherStateData extends ABaseEntity {
-  @Transient
-  private Integer unitsToAggregate;
+
   @Column
   private Date date;
   @Column
@@ -27,6 +28,9 @@ public class WeatherStateData extends ABaseEntity {
   private Double cloudOpacity = 0.;
   @Column
   private Double windSpeed = 0.;
+
+  @Transient
+  private Integer unitsToAggregate;
 
   public Long getModelId() {
     return modelId;

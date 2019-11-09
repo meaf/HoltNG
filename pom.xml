@@ -34,11 +34,6 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- vaadin4spring https://github.com/peholmst/vaadin4spring
-             contains lots of handy helpers for serious Spring + Vaadin 
-             applications. This example uses event bus to decouple the editor 
-             form from the MainUI class.
-        -->
         <dependency>
             <groupId>org.vaadin.spring.extensions</groupId>
             <artifactId>vaadin-spring-ext-boot</artifactId>
@@ -51,10 +46,6 @@
             <groupId>org.vaadin</groupId>
             <artifactId>viritin</artifactId>
         </dependency>
-        <!-- Using Vaadin add-ons with client side extensions is easy, switch
-        as an example in this project, see also vaadin-maven-plugin
-        configuration.
-        -->
         <dependency>
             <groupId>org.vaadin.teemu</groupId>
             <artifactId>switch</artifactId>
@@ -132,18 +123,6 @@
                 <artifactId>apexcharts</artifactId>
                 <version>2.0.0.beta5</version>
             </dependency>
-<!--            <dependency>-->
-<!--                <groupId>org.flywaydb</groupId>-->
-<!--                <artifactId>flyway-core</artifactId>-->
-<!--                <version>6.0.4</version>-->
-<!--                <configuration>-->
-<!--                    <user>databaseUser</user>-->
-<!--                    <password>databasePassword</password>-->
-<!--                    <schemas>-->
-<!--                        <schema>schemaName</schema>-->
-<!--                    </schemas>-->
-<!--                </configuration>-->
-<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 

@@ -71,6 +71,10 @@ public class CoefficientsBar extends MHorizontalLayout {
     return nullableInteger(tfFC.getValue());
   }
 
+  public boolean isFilled(){
+      return !(tfAlpha.getValue().isEmpty() || tfGamma.getValue().isEmpty() || tfGamma.getValue().isEmpty());
+    }
+
   private Double nullableDouble(String value) {
     return (value == null || "".equals(value))
         ? null

@@ -1,4 +1,4 @@
-package com.meaf.apeps.model.entity;
+package com.meaf.apeps.model;
 
 import java.sql.Date;
 import java.util.Calendar;
@@ -16,7 +16,7 @@ public class TimelessDate extends Date {
     }
   }
 
-  TimelessDate(EDateType type, long date) {
+  public TimelessDate(EDateType type, long date) {
     super(date);
     this.format = type;
   }

@@ -1,21 +1,16 @@
 package com.meaf.apeps.view.content.pages;
 
-import com.google.gwt.maps.client.overlays.Circle;
-import com.google.gwt.maps.client.overlays.CircleOptions;
-import com.google.gwt.maps.client.overlays.Polygon;
 import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.calculations.Result;
 import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.Location;
+import com.meaf.apeps.model.entity.User;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
-import com.meaf.apeps.view.beans.LocationBean;
-import com.meaf.apeps.view.beans.ModelBean;
-import com.meaf.apeps.view.beans.ProjectBean;
-import com.meaf.apeps.view.beans.PropertiesBean;
+import com.meaf.apeps.view.beans.*;
 import com.meaf.apeps.view.components.CoefficientsBar;
 import com.meaf.apeps.view.components.ModelChart;
 import com.meaf.apeps.view.components.UploadInfoWindow;
@@ -24,11 +19,12 @@ import com.vaadin.server.Sizeable;
 import com.vaadin.shared.Position;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
-import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapPolygon;
 import com.vaadin.ui.*;
 import org.springframework.stereotype.Component;
+import org.vaadin.viritin.button.MButton;
 import org.vaadin.viritin.components.DisclosurePanel;
 import org.vaadin.viritin.fields.MCheckBox;
+import org.vaadin.viritin.fields.MTextField;
 import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
@@ -44,8 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public
-class ModelContent extends ABaseContent {
+public class ModelContent extends ABaseContent {
 
   private static DecimalFormat df = new DecimalFormat("#.####");
   private final ModelBean modelBean;
@@ -68,13 +63,18 @@ class ModelContent extends ABaseContent {
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
   private MCheckBox cxSolarStats = new MCheckBox("Solar energy", true);
   private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly", true);
+  private UserBean userBean;
+  private Button btnCalculate;
+  private Button btnSaveResults;
+  private List<WeatherStateData> rowsData;
 
-  public ModelContent(ModelBean modelBean, LocationBean locationBean, ProjectBean projectBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate) {
+  public ModelContent(ModelBean modelBean, LocationBean locationBean, ProjectBean projectBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate, UserBean userBean) {
     this.modelBean = modelBean;
     this.locationBean = locationBean;
     this.projectBean = projectBean;
     this.propertiesBean = propertiesBean;
     this.requestHttpUpdate = requestHttpUpdate;
+    this.userBean = userBean;
   }
 
   @Override
@@ -85,8 +85,8 @@ class ModelContent extends ABaseContent {
       e.printStackTrace();
     }
 
-    Button btnCalculate = createCalculateButton();
-    Button btnSaveResults = createSaveButton();
+    btnCalculate = createCalculateButton();
+    btnSaveResults = createSaveButton();
     Button btnClear = createClearButton();
 
     lhCoefficients = new CoefficientsBar(modelBean.getModel());
@@ -145,11 +145,15 @@ class ModelContent extends ABaseContent {
         data
     );
     updateDataGrid();
-    try {
-      calculate();
-    } catch (Exception ex) {
-      ex.printStackTrace();
+
+    if(lhCoefficients.isFilled()) {
+      try {
+        calculate();
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
     }
+
     return content;
   }
 
@@ -192,8 +196,7 @@ class ModelContent extends ABaseContent {
   }
 
   private List<WeatherStateData> returnOnlyMissingValues(List<WeatherStateData> weatherStateDataList) {
-    List<WeatherStateData> entries = modelBean.getEntries();
-    return weatherStateDataList.stream().filter(e -> isDataMissing(entries, e)).collect(Collectors.toList());
+    return weatherStateDataList.stream().filter(e -> isDataMissing(rowsData, e)).collect(Collectors.toList());
   }
 
   private boolean isDataMissing(List<WeatherStateData> entries, WeatherStateData stateData) {
@@ -245,14 +248,26 @@ class ModelContent extends ABaseContent {
         ex.printStackTrace();
         return;
       }
-      modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
-      modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
-      modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
-      modelBean.getModel().setMse(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
-      modelBean.saveModel();
-
-      showSuccessNotification("Success", "Model params are saved");
+      openVerificationWindow(e);
     });
+  }
+
+  private void saveModel(String uname, String password) {
+    userHasPermissions(uname, password);
+    modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
+    modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
+    modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
+    modelBean.getModel().setMse(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
+    modelBean.saveModel();
+
+    showSuccessNotification("Success", "Model params are saved");
+  }
+
+  private void userHasPermissions(String uname, String password) {
+    User user = userBean.findUser(uname, password);
+
+    if(user == null)
+      showErrorNotification("Access denied", "you cannot change this model propertirs");
   }
 
   private void showSuccessNotification(String title, String descr) {
@@ -267,6 +282,31 @@ class ModelContent extends ABaseContent {
     notification.setPosition(Position.TOP_RIGHT);
     notification.setStyleName("error");
     notification.show(Page.getCurrent());
+  }
+
+  private void openVerificationWindow(Button.ClickEvent e){
+
+    /// todo: extract to login form
+    MWindow window = new MWindow("Enter your credentials")
+        .withCenter()
+        .withClosable(true)
+        .withHeight(20, Sizeable.Unit.PERCENTAGE)
+        .withWidth(30, Sizeable.Unit.PERCENTAGE);
+
+    MTextField tfUname = new MTextField();
+    tfUname.setCaption("Username");
+    PasswordField tfPass = new PasswordField();
+    tfPass.setCaption("Password");
+    MButton btnSubmit = new MButton("Submit");
+    btnSubmit.addClickListener(s -> {
+      saveModel(tfUname.getValue(), tfPass.getValue());
+    });
+
+    MHorizontalLayout layout = new MHorizontalLayout(tfUname, tfPass, btnSubmit);
+    window.setContent(layout);
+
+    e.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
+    e.getButton().getUI().addWindow(window);
   }
 
   private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
@@ -316,16 +356,21 @@ class ModelContent extends ABaseContent {
     if (!lhCoefficients.check())
       throw new IllegalArgumentException();
 
-    List<WeatherStateData> entries = modelBean.getEntries();
-    if (entries.isEmpty())
+    if (rowsData.isEmpty()) {
       throw new IllegalArgumentException();
-
+    }
     List<WeatherStateData> dataList = cxGroupMonthly.getValue()
-        ? WeatherAggregator.dailyToMonthy(entries)
-        : entries;
+        ? WeatherAggregator.dailyToMonthy(rowsData)
+        : rowsData;
 
     method = new HoltWinters();
     method.setTargetType(cxSolarStats.getValue() ? ETargetValues.SOLAR : ETargetValues.WIND);
+    method.setDateInterval(cxGroupMonthly.getValue() ? HoltWinters.EDateInterval.MONTHLY : HoltWinters.EDateInterval.DAILY);
+
+    if(dataList.isEmpty() || dataList.size() < lhCoefficients.getPeriod()) {
+      showErrorNotification("Error", "not enough data to build the model, consider uploading new stats or select smaller period");
+      throw new IllegalArgumentException();
+    }
     method.calculate(dataList,
         lhCoefficients.getAlpha(),
         lhCoefficients.getBeta(),
@@ -355,9 +400,18 @@ class ModelContent extends ABaseContent {
 
 
   private void updateDataGrid() {
-    entriesGrid.setRows(modelBean.getEntries().stream().peek(
+    List<WeatherStateData> dataList = modelBean.getEntries().stream().peek(
         e -> e.setWindSpeed(Double.parseDouble(df.format(e.getWindSpeed())))
-    ).collect(Collectors.toList()));
+    ).collect(Collectors.toList());
+
+    this.rowsData = dataList;
+    entriesGrid.setRows(dataList);
+    enableModelButtons(!dataList.isEmpty());
+  }
+
+  private void enableModelButtons(boolean enabled) {
+    btnCalculate.setEnabled(enabled);
+    btnSaveResults.setEnabled(enabled);
   }
 
   private void redrawChart() {

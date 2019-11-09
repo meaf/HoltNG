@@ -24,7 +24,7 @@ public class ModelChart extends AbstractVaadinChartExample {
 
   public ModelChart(HoltWinters method) {
     super();
-    if (method == null)
+    if (method == null || method.getOptimalResult() == null)
       return;
     this.input = method.getInputData();
     this.smoothed = method.getSmoothedData();

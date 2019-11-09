@@ -12,6 +12,8 @@ public class User extends ABaseEntity {
   private String name;
   @Column
   private String password;
+  @Column
+  private Boolean isAdmin;
 
   public String getName() {
     return name;
