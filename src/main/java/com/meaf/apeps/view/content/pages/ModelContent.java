@@ -6,25 +6,19 @@ import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.Location;
-import com.meaf.apeps.model.entity.User;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
 import com.meaf.apeps.view.beans.*;
-import com.meaf.apeps.view.components.CoefficientsBar;
-import com.meaf.apeps.view.components.ModelChart;
-import com.meaf.apeps.view.components.UploadInfoWindow;
-import com.vaadin.server.Page;
+import com.meaf.apeps.view.components.*;
 import com.vaadin.server.Sizeable;
-import com.vaadin.shared.Position;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
+import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapMarker;
 import com.vaadin.ui.*;
 import org.springframework.stereotype.Component;
-import org.vaadin.viritin.button.MButton;
 import org.vaadin.viritin.components.DisclosurePanel;
 import org.vaadin.viritin.fields.MCheckBox;
-import org.vaadin.viritin.fields.MTextField;
 import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
@@ -32,9 +26,9 @@ import org.vaadin.viritin.layouts.MVerticalLayout;
 import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
-import java.rmi.NoSuchObjectException;
 import java.text.DecimalFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,8 +38,6 @@ public class ModelContent extends ABaseContent {
 
   private static DecimalFormat df = new DecimalFormat("#.####");
   private final ModelBean modelBean;
-  private final LocationBean locationBean;
-  private final ProjectBean projectBean;
   private final PropertiesBean propertiesBean;
 
   private final RequestHttpUpdate requestHttpUpdate;
@@ -63,30 +55,22 @@ public class ModelContent extends ABaseContent {
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
   private MCheckBox cxSolarStats = new MCheckBox("Solar energy", true);
   private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly", true);
-  private UserBean userBean;
   private Button btnCalculate;
   private Button btnSaveResults;
   private List<WeatherStateData> rowsData;
 
-  public ModelContent(ModelBean modelBean, LocationBean locationBean, ProjectBean projectBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate, UserBean userBean) {
+  public ModelContent(ModelBean modelBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
-    this.locationBean = locationBean;
-    this.projectBean = projectBean;
     this.propertiesBean = propertiesBean;
     this.requestHttpUpdate = requestHttpUpdate;
-    this.userBean = userBean;
   }
 
   @Override
   public com.vaadin.ui.Component getContent() {
-    try {
-      initFakeData();
-    } catch (NoSuchObjectException e) {
-      e.printStackTrace();
-    }
 
     btnCalculate = createCalculateButton();
     btnSaveResults = createSaveButton();
+    btnSaveResults.setVisible(modelBean.isUserManager());
     Button btnClear = createClearButton();
 
     lhCoefficients = new CoefficientsBar(modelBean.getModel());
@@ -105,7 +89,10 @@ public class ModelContent extends ABaseContent {
     tfMSEPerc.setCaption("MSE, %");
     tfMSEPerc.setEnabled(false);
 
-    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
+    Button btnReturnToProject = new Button("Return");
+    btnReturnToProject.addClickListener(e -> changeState(StateBean.EState.Project));
+
+    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly), btnReturnToProject);
     hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
@@ -146,7 +133,7 @@ public class ModelContent extends ABaseContent {
     );
     updateDataGrid();
 
-    if(lhCoefficients.isFilled()) {
+    if (lhCoefficients.isFilled()) {
       try {
         calculate();
       } catch (Exception ex) {
@@ -158,17 +145,12 @@ public class ModelContent extends ABaseContent {
   }
 
   private GoogleMap getMap() {
-    GoogleMap googleMap = new GoogleMap(propertiesBean.getMapsKey(), null, "english");
-    googleMap.setSizeFull();
+    Location location = modelBean.getModel().getLocation();
+    LatLon latLon = location.toLatLon();
+    GoogleMapMarker googleMapMarker = new GoogleMapMarker(location.getName(), latLon, false, null);
 
-    Location location = locationBean.getCurrentLocation();
-    LatLon latLon = new LatLon(location.getLatitude().doubleValue(), location.getLongitude().doubleValue());
-
-
-    googleMap.addMarker(location.getName(), latLon, false, null);
+    GoogleMap googleMap = new GoogleMapPreset(propertiesBean.getMapsKey(), null, "english", Collections.singletonList(googleMapMarker));
     googleMap.setCenter(latLon);
-    googleMap.setMinZoom(4);
-    googleMap.setMaxZoom(16);
     return googleMap;
   }
 
@@ -183,11 +165,11 @@ public class ModelContent extends ABaseContent {
     updButton.addClickListener(e -> {
       List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocation().getId()));
       if (weatherStateDataList == null) {
-        showErrorNotification("Http update error", "could not communicate to data sever");
+        EToast.ERROR.show("Http update error", "could not communicate to data sever");
         return;
       }
       if (weatherStateDataList.isEmpty())
-        showSuccessNotification("Everything is up-to-date", "nothing to update");
+        EToast.SUCCESS.show("Everything is up-to-date", "nothing to update");
 
       createNewDataWindow(updButton, weatherStateDataList, false);
     });
@@ -248,65 +230,24 @@ public class ModelContent extends ABaseContent {
         ex.printStackTrace();
         return;
       }
-      openVerificationWindow(e);
+      saveModel();
     });
   }
 
-  private void saveModel(String uname, String password) {
-    userHasPermissions(uname, password);
+  private void saveModel() {
+    if (method.getTargetType() == ETargetValues.SOLAR) {
+      modelBean.getModel().setGhiForecast(method.getNearestForecast().asDouble());
+      modelBean.getModel().setMseSolar(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
+    } else {
+      modelBean.getModel().setWindSpeedForecast(method.getNearestForecast().asDouble());
+      modelBean.getModel().setMseWind(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
+    }
     modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
     modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
     modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
-    modelBean.getModel().setMse(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
     modelBean.saveModel();
 
-    showSuccessNotification("Success", "Model params are saved");
-  }
-
-  private void userHasPermissions(String uname, String password) {
-    User user = userBean.findUser(uname, password);
-
-    if(user == null)
-      showErrorNotification("Access denied", "you cannot change this model propertirs");
-  }
-
-  private void showSuccessNotification(String title, String descr) {
-    Notification notification = new Notification(title, descr);
-    notification.setPosition(Position.TOP_RIGHT);
-    notification.setStyleName("");
-    notification.show(Page.getCurrent());
-  }
-
-  private void showErrorNotification(String title, String descr) {
-    Notification notification = new Notification(title, descr);
-    notification.setPosition(Position.TOP_RIGHT);
-    notification.setStyleName("error");
-    notification.show(Page.getCurrent());
-  }
-
-  private void openVerificationWindow(Button.ClickEvent e){
-
-    /// todo: extract to login form
-    MWindow window = new MWindow("Enter your credentials")
-        .withCenter()
-        .withClosable(true)
-        .withHeight(20, Sizeable.Unit.PERCENTAGE)
-        .withWidth(30, Sizeable.Unit.PERCENTAGE);
-
-    MTextField tfUname = new MTextField();
-    tfUname.setCaption("Username");
-    PasswordField tfPass = new PasswordField();
-    tfPass.setCaption("Password");
-    MButton btnSubmit = new MButton("Submit");
-    btnSubmit.addClickListener(s -> {
-      saveModel(tfUname.getValue(), tfPass.getValue());
-    });
-
-    MHorizontalLayout layout = new MHorizontalLayout(tfUname, tfPass, btnSubmit);
-    window.setContent(layout);
-
-    e.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
-    e.getButton().getUI().addWindow(window);
+    EToast.SUCCESS.show("Success", "Model params are saved");
   }
 
   private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
@@ -334,7 +275,7 @@ public class ModelContent extends ABaseContent {
       Long id = modelBean.getModel().getId();
       data.forEach(d -> d.setModelId(id));
       modelBean.mergeEntries(data);
-      showSuccessNotification("Merged", data.size() + " entries were added to model");
+      EToast.SUCCESS.show("Merged", data.size() + " entries were added to model");
       updateDataGrid();
       window.close();
     });
@@ -367,8 +308,8 @@ public class ModelContent extends ABaseContent {
     method.setTargetType(cxSolarStats.getValue() ? ETargetValues.SOLAR : ETargetValues.WIND);
     method.setDateInterval(cxGroupMonthly.getValue() ? HoltWinters.EDateInterval.MONTHLY : HoltWinters.EDateInterval.DAILY);
 
-    if(dataList.isEmpty() || dataList.size() < lhCoefficients.getPeriod()) {
-      showErrorNotification("Error", "not enough data to build the model, consider uploading new stats or select smaller period");
+    if (dataList.isEmpty() || dataList.size() < lhCoefficients.getPeriod()) {
+      EToast.ERROR.show("Error", "not enough data to build the model, consider uploading new stats or select smaller period");
       throw new IllegalArgumentException();
     }
     method.calculate(dataList,
@@ -391,13 +332,6 @@ public class ModelContent extends ABaseContent {
 
     redrawChart();
   }
-
-  private void initFakeData() throws NoSuchObjectException {
-    projectBean.switchProject(1L);
-    modelBean.switchModel(1L);
-    locationBean.setLocation(modelBean.getModel().getLocation().getId());
-  }
-
 
   private void updateDataGrid() {
     List<WeatherStateData> dataList = modelBean.getEntries().stream().peek(

@@ -10,14 +10,15 @@ public class LoginPopup extends MWindow {
   public LoginPopup(Button.ClickEvent e, LoginForm.LoginListener loginListener) {
     MWindow window = new MWindow("Enter your credentials")
         .withCenter()
+        .withModal(true)
+        .withDraggable(false)
+        .withResizable(false)
         .withClosable(true)
-        .withHeight(20, Sizeable.Unit.PERCENTAGE)
-        .withWidth(30, Sizeable.Unit.PERCENTAGE);
+        .withHeight(30, Sizeable.Unit.PERCENTAGE)
+        .withWidth(15, Sizeable.Unit.PERCENTAGE);
 
     LoginForm loginForm = new LoginForm();
-
     loginForm.addLoginListener(loginListener);
-
     window.setContent(loginForm);
 
     e.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);

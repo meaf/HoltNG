@@ -3,7 +3,7 @@ package com.meaf.apeps.view.content;
 import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.content.pages.ModelContent;
 import com.meaf.apeps.view.content.pages.ProjectContent;
-import com.meaf.apeps.view.events.StateChangeEvent;
+import com.meaf.apeps.view.events.state.StateChangeEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 

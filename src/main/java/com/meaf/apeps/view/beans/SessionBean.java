@@ -1,6 +1,7 @@
 package com.meaf.apeps.view.beans;
 
 import com.meaf.apeps.model.entity.User;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.LoginForm;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
@@ -17,7 +18,7 @@ public class SessionBean {
   private User user;
 
   public boolean authenticate(LoginForm.LoginEvent e) {
-    User user = userBean.findUser(e.getSource().getUsernameCaption(), e.getSource().getPasswordCaption());
+    User user = userBean.findUser(e.getLoginParameter("username"), e.getLoginParameter("password"));
     if(user != null) {
       this.user = user;
       e.getSource().getUI().getPage().reload();
@@ -30,7 +31,12 @@ public class SessionBean {
     return user != null;
   }
 
-  public User getUser() {
+  public User getLoggedInUser() {
     return user;
+  }
+
+  public void logout(Button.ClickEvent e) {
+    user = null;
+    e.getButton().getUI().getPage().reload();
   }
 }

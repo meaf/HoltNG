@@ -1,4 +1,4 @@
-package com.meaf.apeps.view.events;
+package com.meaf.apeps.view.events.state;
 
 import com.meaf.apeps.view.beans.StateBean;
 import org.springframework.context.ApplicationEvent;

@@ -1,7 +1,6 @@
-package com.meaf.apeps.view.events;
+package com.meaf.apeps.view.events.state;
 
 import com.meaf.apeps.view.beans.StateBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 

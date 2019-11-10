@@ -4,18 +4,30 @@ import com.meaf.apeps.model.entity.Location;
 import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.Project;
 import com.meaf.apeps.view.beans.*;
+import com.meaf.apeps.view.components.GoogleMapPreset;
 import com.meaf.apeps.view.components.LoginPopup;
+import com.meaf.apeps.view.components.ProjectCreationPopup;
+import com.vaadin.data.HasValue;
 import com.vaadin.data.provider.ListDataProvider;
+import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
-import com.vaadin.ui.*;
+import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapMarker;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import org.springframework.stereotype.Component;
+import org.vaadin.viritin.grid.MGrid;
+import org.vaadin.viritin.layouts.MHorizontalLayout;
 import org.vaadin.viritin.layouts.MVerticalLayout;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Component
-public class ProjectContent extends ABaseContent{
+public class ProjectContent extends ABaseContent {
 
   private ProjectBean projectBean;
   private PropertiesBean propertiesBean;
@@ -23,10 +35,11 @@ public class ProjectContent extends ABaseContent{
   private ModelBean modelBean;
   private SessionBean sessionBean;
 
-  GoogleMap googleMap;
-  ComboBox<Project> cbProjects;
-  Grid<Model> modelGrid;
-
+  private GoogleMap googleMap;
+  private ComboBox<Project> cbProjects;
+  private MGrid<Model> modelGrid;
+  private Button btnProceed;
+  private List<Project> projects;
 
 
   public ProjectContent(ProjectBean projectBean, PropertiesBean propertiesBean, LocationBean locationBean, ModelBean modelBean, SessionBean sessionBean) {
@@ -44,22 +57,33 @@ public class ProjectContent extends ABaseContent{
     cbProjects = createProjectsComboBox();
     googleMap = createMap();
     modelGrid = createModelGrid();
-    Button btnLogin = createLoginBtn();
+    Button sessionButton = sessionBean.isUserLoggedIn()
+        ? createLogoutBtn()
+        : createLoginBtn();
+    btnProceed = createProceedBtn();
+    Button btnNewProject = createNewProjectBtn();
+
+    MHorizontalLayout buttons = new MHorizontalLayout();
+    buttons.add(sessionButton, btnProceed, btnNewProject);
 
     layout.add(cbProjects);
     layout.add(googleMap);
     layout.add(modelGrid);
-    layout.add(btnLogin);
+    layout.add(buttons);
 
     fill();
 
-    btnLogin.setVisible(!sessionBean.isUserLoggedIn());
+    cbProjects.setSizeFull();
+    layout.setExpandRatio(cbProjects, 0);
+    layout.setExpandRatio(googleMap, 3);
+    layout.setExpandRatio(modelGrid, 4);
+
 
     return layout;
   }
 
   private void fill() {
-    if(fillProjects()) {
+    if (fillProjects()) {
       fillMap();
       fillModels();
     }
@@ -71,42 +95,85 @@ public class ProjectContent extends ABaseContent{
     return btnLogin;
   }
 
-  private Grid<Model> createModelGrid() {
-    Grid<Model> grid = new Grid<>();
+  private Button createLogoutBtn() {
+    Button btnLogin = new Button("Logout");
+    btnLogin.addClickListener(e -> sessionBean.logout(e));
+
+    return btnLogin;
+  }
+
+  private Button createNewProjectBtn() {
+    Button button = new Button("New project");
+    Consumer<Project> fillProjects = this::addProject;
+    button.addClickListener(e -> new ProjectCreationPopup(e, projectBean, sessionBean.getLoggedInUser(), fillProjects));
+    button.setVisible(sessionBean.isUserLoggedIn());
+    return button;
+  }
+
+  private void addProject(Project project) {
+    projects.add(project);
+    cbProjects.setDataProvider(new ListDataProvider<>(projects));
+  }
+
+  private Button createProceedBtn() {
+    Button button = new Button("Open model");
+    button.setEnabled(false);
+    button.addClickListener(e -> openModel());
+    return button;
+  }
+
+  private void openModel() {
+    Set<Model> selectedItems = this.modelGrid.getSelectedItems();
+    modelBean.switchModel(selectedItems.iterator().next().getId());
+    changeState(StateBean.EState.Model);
+  }
+
+  private MGrid<Model> createModelGrid() {
+    MGrid<Model> grid = new MGrid<>();
     grid.setSizeFull();
-    grid.addColumn(Model::getName).setCaption("Name").setExpandRatio(1);
+    grid.addColumn(Model::getName).setCaption("Name").setExpandRatio(2);
 
     grid.addColumn(m -> m.getLocation().getLatitude() + "/" + m.getLocation().getLongitude()).setCaption("Lat/Lon")
         .setExpandRatio(2);
 
-    grid.addColumn(Model::getDataAmount).setCaption("Data amount");
-    grid.addColumn(Model::getAvgGhi).setCaption("Avg GHI");
-    grid.addColumn(Model::getAvgWindSpeed).setCaption("Avg wind speed");
-    grid.addColumn(Model::getMse).setCaption("MSE");
-    grid.addColumn(Model::getGhiForecastForecast).setCaption("Forecast(GHI)");
-    grid.addColumn(Model::getWindSpeedForecast).setCaption("Forecast(WS)");
+    grid.addColumn(Model::getDataAmount).setCaption("Data amount").setExpandRatio(1);
+    grid.addColumn(Model::getGhiForecast).setCaption("Forecast(GHI)").setExpandRatio(1);
+    grid.addColumn(Model::getAvgGhi).setCaption("Avg GHI").setExpandRatio(1);
+    grid.addColumn(Model::getMseWind).setCaption("MSE(GHI)").setExpandRatio(1);
+    grid.addColumn(Model::getWindSpeedForecast).setCaption("Forecast(Wind)").setExpandRatio(1);
+    grid.addColumn(Model::getAvgWindSpeed).setCaption("Avg wind speed").setExpandRatio(1);
+    grid.addColumn(Model::getMseSolar).setCaption("MSE(Wind)").setExpandRatio(1);
+
+    grid.addSelectionListener(this::selectModel);
 
     return grid;
   }
 
+  private void selectModel(SelectionEvent<Model> e) {
+    Model model = e.getFirstSelectedItem().orElse(null);
+    if(model == null)
+      return;
+
+    btnProceed.setEnabled(true);
+    googleMap.setCenter(model.getLocation().toLatLon());
+  }
+
   private void fillModels() {
     List<Model> models = projectBean.getModels();
-    modelGrid.setData(models);
+    modelGrid.setRows(models);
   }
 
   private GoogleMap createMap() {
-    GoogleMap googleMap = new GoogleMap(propertiesBean.getMapsKey(), null, "english");
-    googleMap.setSizeFull();
-    googleMap.setMinZoom(4);
-    googleMap.setMaxZoom(16);
-    return googleMap;
+    return new GoogleMapPreset(propertiesBean.getMapsKey(), null, "english", null);
   }
 
   private void fillMap() {
     List<Location> locations = locationBean.listProjectLocations(projectBean.getProject());
-    for(Location location : locations) {
-      LatLon latLon = new LatLon(location.getLatitude().doubleValue(), location.getLongitude().doubleValue());
-      googleMap.addMarker(location.getName(), latLon, false, null);
+    googleMap.clearMarkers();
+    for (Location location : locations) {
+      LatLon latLon = location.toLatLon();
+      GoogleMapMarker marker = new GoogleMapMarker(location.getName(), latLon, false, null);
+      googleMap.addMarker(marker);
       googleMap.setCenter(latLon);
     }
   }
@@ -114,16 +181,33 @@ public class ProjectContent extends ABaseContent{
   private ComboBox<Project> createProjectsComboBox() {
     ComboBox<Project> cbProjects = new ComboBox<>();
     cbProjects.setCaption("Select a project");
+    cbProjects.setScrollToSelectedItem(true);
+    cbProjects.setItemCaptionGenerator(Project::getName);
+    cbProjects.setTextInputAllowed(false);
+    cbProjects.addValueChangeListener(this::trySwitchProject);
+    cbProjects.setEmptySelectionAllowed(false);
+
     return cbProjects;
   }
 
+  private void trySwitchProject(HasValue.ValueChangeEvent<Project> e) {
+    if (!e.isUserOriginated())
+      return;
+    Long id = e.getSource().getValue().getId();
+    if (id == null)
+      return;
+    projectBean.switchProject(id);
+    fill();
+  }
+
   private boolean fillProjects() {
-    List<Project> projects = projectBean.getUserAvailableProjects();
+    projects = projectBean.getUserAvailableProjects();
     googleMap.setVisible(!projects.isEmpty());
     modelGrid.setVisible(!projects.isEmpty());
-    if(projects.isEmpty())
+    if (projects.isEmpty())
       return false;
     cbProjects.setDataProvider(new ListDataProvider<>(projects));
+    cbProjects.setSelectedItem(projectBean.getProject());
     return true;
   }
 

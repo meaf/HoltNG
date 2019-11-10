@@ -30,4 +30,12 @@ public class User extends ABaseEntity {
   public void setPassword(String password) {
     this.password = password;
   }
+
+  public Boolean getAdmin() {
+    return isAdmin;
+  }
+
+  public void setAdmin(Boolean admin) {
+    isAdmin = admin;
+  }
 }

@@ -1,5 +1,7 @@
 package com.meaf.apeps.model.entity;
 
+import com.vaadin.tapio.googlemaps.client.LatLon;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -38,5 +40,9 @@ public class Location extends ABaseEntity {
 
   public void setLongitude(BigDecimal longitude) {
     this.longitude = longitude;
+  }
+
+  public LatLon toLatLon(){
+    return new LatLon(this.getLatitude().doubleValue(), this.getLongitude().doubleValue());
   }
 }

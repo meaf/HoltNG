@@ -106,6 +106,10 @@ public class HoltWinters {
     return result;
   }
 
+  public DatedValue getNearestForecast(){
+   return Fc.iterator().next();
+  }
+
   private void forecast(double alpha,
                         double beta,
                         double gamma,

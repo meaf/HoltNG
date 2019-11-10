@@ -24,8 +24,10 @@ public class Model extends ABaseEntity {
   private BigDecimal beta;
   @Column(name = "gamma", precision = 8, scale = 5)
   private BigDecimal gamma;
-  @Column(name = "mse", precision = 15, scale = 5)
-  private BigDecimal mse;
+  @Column(name = "mse_wind", precision = 15, scale = 5)
+  private BigDecimal mseWind;
+  @Column(name = "mse_solar", precision = 15, scale = 5)
+  private BigDecimal mseSolar;
   @Column
   private Integer period;
   @Formula("(select avg(d.ghi) from weather_state_data d where d.model_id = id)")
@@ -35,7 +37,7 @@ public class Model extends ABaseEntity {
   @Column
   private Double windSpeedForecast;
   @Column
-  private Double ghiForecastForecast;
+  private Double ghiForecast;
 
   @Formula("(select count(*) from weather_state_data d where d.model_id = id)")
   private Double dataAmount;
@@ -88,12 +90,24 @@ public class Model extends ABaseEntity {
     this.gamma = gamma;
   }
 
-  public BigDecimal getMse() {
-    return mse;
+  public BigDecimal getMseWind() {
+    return mseWind;
   }
 
-  public void setMse(BigDecimal mse) {
-    this.mse = mse;
+  public void setMseWind(BigDecimal mseWind) {
+    this.mseWind = mseWind;
+  }
+
+  public BigDecimal getMseSolar() {
+    return mseSolar;
+  }
+
+  public void setMseSolar(BigDecimal mseSolar) {
+    this.mseSolar = mseSolar;
+  }
+
+  public void setDataAmount(Double dataAmount) {
+    this.dataAmount = dataAmount;
   }
 
   public Integer getPeriod() {
@@ -136,12 +150,12 @@ public class Model extends ABaseEntity {
     this.windSpeedForecast = windSpeedForecast;
   }
 
-  public Double getGhiForecastForecast() {
-    return ghiForecastForecast;
+  public Double getGhiForecast() {
+    return ghiForecast;
   }
 
-  public void setGhiForecastForecast(Double ghiForecastForecast) {
-    this.ghiForecastForecast = ghiForecastForecast;
+  public void setGhiForecast(Double ghiForecast) {
+    this.ghiForecast = ghiForecast;
   }
 
   public Double getDataAmount() {
