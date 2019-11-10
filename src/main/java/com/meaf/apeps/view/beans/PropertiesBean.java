@@ -20,11 +20,11 @@ public class PropertiesBean {
     this.locationKeyRepository = locationKeyRepository;
   }
 
-  public List<LocationKey> getLocationKeys(Long locationId){
+  public List<LocationKey> getLocationKeys(Long locationId) {
     return locationKeyRepository.findKeysForLocation(locationId);
   }
 
-  public String getMapsKey(){
+  public String getMapsKey() {
     return sysPropertyRepository.getProperty(HoltConstants.GCP_MAPS_API_KEY).getValue();
   }
 

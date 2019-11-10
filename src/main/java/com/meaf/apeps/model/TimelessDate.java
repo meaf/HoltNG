@@ -7,14 +7,6 @@ import java.util.Objects;
 public class TimelessDate extends Date {
 
   private EDateType format;
-  public enum EDateType{
-    DAILY(Calendar.DAY_OF_YEAR),
-    MONTHY(Calendar.MONTH);
-    private final int dateUnit;
-    EDateType(int dateUnit) {
-        this.dateUnit = dateUnit;
-    }
-  }
 
   public TimelessDate(EDateType type, long date) {
     super(date);
@@ -23,7 +15,7 @@ public class TimelessDate extends Date {
 
   @Override
   public boolean equals(Object obj) {
-    if(obj instanceof java.util.Date){
+    if (obj instanceof java.util.Date) {
       Calendar cal1 = Calendar.getInstance();
       Calendar cal2 = Calendar.getInstance();
       cal1.setTime((java.util.Date) obj);
@@ -39,5 +31,15 @@ public class TimelessDate extends Date {
     Calendar cal = Calendar.getInstance();
     cal.setTime(this);
     return Objects.hash(cal.get(this.format.dateUnit), cal.get(Calendar.YEAR));
+  }
+
+  public enum EDateType {
+    DAILY(Calendar.DAY_OF_YEAR),
+    MONTHY(Calendar.MONTH);
+    private final int dateUnit;
+
+    EDateType(int dateUnit) {
+      this.dateUnit = dateUnit;
+    }
   }
 }

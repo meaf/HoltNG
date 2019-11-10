@@ -19,9 +19,9 @@ public class RequestHttpUpdate {
     this.locationKeyRepository = locationKeyRepository;
   }
 
-  public List<WeatherStateData> requestUpdate(Long locationId){
+  public List<WeatherStateData> requestUpdate(Long locationId) {
     HttpResponse httpResponse = HttpSender.sendUpdateRequest(locationKeyRepository.findKeysForLocation(locationId));
-    if(httpResponse == null || httpResponse.isError())
+    if (httpResponse == null || httpResponse.isError())
       return null;
     List<WeatherStateData> list = httpResponseParser.parse(httpResponse.getResponse());
     return WeatherAggregator.hourlyToDaily(list, WeatherAggregator.EDataSource.http);

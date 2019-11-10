@@ -25,11 +25,6 @@ public class ProjectBean {
 
   private Project project;
 
-  @PostConstruct
-  void initProject(){
-    this.project = getUserAvailableProjects().stream().findAny().orElse(null);
-  }
-
   public ProjectBean(ProjectRepository projectRepository, SessionBean sessionBean, ModelRepository modelRepository, UserProjectRelationRepository userProjectRelationRepository) {
     this.projectRepository = projectRepository;
     this.sessionBean = sessionBean;
@@ -37,7 +32,12 @@ public class ProjectBean {
     this.userProjectRelationRepository = userProjectRelationRepository;
   }
 
-  public List<Model> getModels(){
+  @PostConstruct
+  void initProject() {
+    this.project = getUserAvailableProjects().stream().findAny().orElse(null);
+  }
+
+  public List<Model> getModels() {
     return modelRepository.findModelsByProjectId(this.project.getId());
   }
 
@@ -59,7 +59,7 @@ public class ProjectBean {
   public Project save(Project p, User user) {
 
     Project saved = projectRepository.save(p);
-    if(saved.getPrivateProject()) {
+    if (saved.getPrivateProject()) {
       UserProjectRelation relation = new UserProjectRelation();
       relation.setUserId(user.getId());
       relation.setProjectId(p.getId());

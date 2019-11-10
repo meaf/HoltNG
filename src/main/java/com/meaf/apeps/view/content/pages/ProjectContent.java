@@ -20,11 +20,9 @@ import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 import org.vaadin.viritin.layouts.MVerticalLayout;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 @Component
 public class ProjectContent extends ABaseContent {
@@ -151,7 +149,7 @@ public class ProjectContent extends ABaseContent {
 
   private void selectModel(SelectionEvent<Model> e) {
     Model model = e.getFirstSelectedItem().orElse(null);
-    if(model == null)
+    if (model == null)
       return;
 
     btnProceed.setEnabled(true);

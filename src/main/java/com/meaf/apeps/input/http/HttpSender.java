@@ -15,7 +15,7 @@ class HttpSender {
     HttpURLConnection con = null;
     try {
 
-      for(LocationKey key : keysForLocation) {
+      for (LocationKey key : keysForLocation) {
         URL url = new URL(prepareUrlString(key));
         con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
@@ -24,7 +24,7 @@ class HttpSender {
         con.setRequestProperty("Content-Type", "application/json");
 
         HttpResponse fullResponse = FullResponseBuilder.getFullResponse(con);
-        if(!fullResponse.isError())
+        if (!fullResponse.isError())
           return fullResponse;
       }
 

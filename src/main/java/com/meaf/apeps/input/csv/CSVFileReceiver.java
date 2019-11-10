@@ -14,10 +14,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class CSVFileReceiver implements Upload.Receiver {
-  IWeatherParser parser = new CSVRowParser();
   private static final String header = "PeriodEnd,PeriodStart,Period,CloudOpacity,Dhi,Dni,Ebh,Ghi,WindDirection10m,WindSpeed10m";
   private static final int endLineByte = '\n';
-
+  IWeatherParser parser = new CSVRowParser();
   private List<String> rows = new LinkedList<>();
   private java.util.Date filterDate;
 

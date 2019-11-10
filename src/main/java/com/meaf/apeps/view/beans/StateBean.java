@@ -7,12 +7,6 @@ import org.springframework.web.context.annotation.SessionScope;
 @SessionScope
 public class StateBean {
 
-  public enum EState{
-    Undefined,
-    Project,
-    Model,
-  }
-
   private EState state = EState.Project;
 
   public EState getState() {
@@ -21,5 +15,11 @@ public class StateBean {
 
   public void setState(EState state) {
     this.state = state;
+  }
+
+  public enum EState {
+    Undefined,
+    Project,
+    Model,
   }
 }

@@ -14,7 +14,7 @@ public class DatedValue {
   }
 
   public DatedValue(LocalDate date, Number number) {
-    this.date = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());;
+    this.date = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
     this.number = number;
   }
 
@@ -26,7 +26,7 @@ public class DatedValue {
     return number;
   }
 
-  public double asDouble(){
+  public double asDouble() {
     return number.doubleValue();
   }
 }

@@ -106,10 +106,6 @@ public class Model extends ABaseEntity {
     this.mseSolar = mseSolar;
   }
 
-  public void setDataAmount(Double dataAmount) {
-    this.dataAmount = dataAmount;
-  }
-
   public Integer getPeriod() {
     return period;
   }
@@ -160,5 +156,9 @@ public class Model extends ABaseEntity {
 
   public Double getDataAmount() {
     return dataAmount;
+  }
+
+  public void setDataAmount(Double dataAmount) {
+    this.dataAmount = dataAmount;
   }
 }

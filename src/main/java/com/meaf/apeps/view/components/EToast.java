@@ -14,10 +14,10 @@ public enum EToast {
     this.style = s;
   }
 
-  public void show(String title, String descr){
-      com.vaadin.ui.Notification notification = new com.vaadin.ui.Notification(title, descr);
-      notification.setPosition(Position.TOP_RIGHT);
-      notification.setStyleName(style);
-      notification.show(Page.getCurrent());
+  public void show(String title, String descr) {
+    com.vaadin.ui.Notification notification = new com.vaadin.ui.Notification(title, descr);
+    notification.setPosition(Position.TOP_RIGHT);
+    notification.setStyleName(style);
+    notification.show(Page.getCurrent());
   }
 }

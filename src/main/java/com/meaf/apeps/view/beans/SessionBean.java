@@ -10,16 +10,15 @@ import org.springframework.web.context.annotation.SessionScope;
 @SessionScope
 public class SessionBean {
   private UserBean userBean;
+  private User user;
 
   public SessionBean(UserBean userBean) {
     this.userBean = userBean;
   }
 
-  private User user;
-
   public boolean authenticate(LoginForm.LoginEvent e) {
     User user = userBean.findUser(e.getLoginParameter("username"), e.getLoginParameter("password"));
-    if(user != null) {
+    if (user != null) {
       this.user = user;
       e.getSource().getUI().getPage().reload();
     }

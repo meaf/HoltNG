@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 public interface SysPropertyRepository extends IRepository<SystemProperty> {
 
   @Query("SELECT p FROM SystemProperty p where p.name = :name")
-  SystemProperty getProperty(@Param("name") String  name);
+  SystemProperty getProperty(@Param("name") String name);
 
 
 }

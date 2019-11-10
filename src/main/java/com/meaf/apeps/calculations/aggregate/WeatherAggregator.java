@@ -11,17 +11,6 @@ import java.util.stream.Collectors;
 
 public class WeatherAggregator {
 
-  public enum EDataSource {
-    http(48),
-    csv(24);
-
-    final int entriesPerDay;
-
-    EDataSource(int entriesPerDay) {
-      this.entriesPerDay = entriesPerDay;
-    }
-  }
-
   private WeatherAggregator() {
   }
 
@@ -63,7 +52,7 @@ public class WeatherAggregator {
     return avgState.stream()
         .map(WeatherAggregator::average)
         .sorted(Comparator.comparing(WeatherStateData::getDate))
-            .collect(Collectors.toList());
+        .collect(Collectors.toList());
   }
 
   private static WeatherStateData createAccumulator(Map.Entry<TimelessDate, List<WeatherStateData>> list) {
@@ -96,6 +85,17 @@ public class WeatherAggregator {
     acc.setWindSpeed(Double.sum(acc.getWindSpeed(), src.getWindSpeed()));
 
     return acc;
+  }
+
+  public enum EDataSource {
+    http(48),
+    csv(24);
+
+    final int entriesPerDay;
+
+    EDataSource(int entriesPerDay) {
+      this.entriesPerDay = entriesPerDay;
+    }
   }
 
 }

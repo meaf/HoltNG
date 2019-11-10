@@ -1,6 +1,8 @@
 package com.meaf.apeps.calculations;
 
 public class Result {
+  private final double alpha, beta, gamma;
+  private final double mae, mse, rmse, msePerc;
   Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
     this.alpha = alpha; //коэффициент сглаживания ряда
     this.beta = beta; //коэффициент сглаживания тренда
@@ -10,9 +12,6 @@ public class Result {
     this.msePerc = msePerc;
     this.rmse = Math.sqrt(mse);
   }
-
-  private final double alpha, beta, gamma;
-  private final double mae, mse, rmse, msePerc;
 
   public double getAlpha() {
     return alpha;

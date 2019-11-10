@@ -92,16 +92,16 @@ public class WeatherStateData extends ABaseEntity {
     return date;
   }
 
+  public void setDate(Date date) {
+    this.date = date;
+  }
+
   public TimelessDate asDayUnit() {
     return new TimelessDate(TimelessDate.EDateType.DAILY, date.getTime());
   }
 
   public TimelessDate asMonthUnit() {
     return new TimelessDate(TimelessDate.EDateType.MONTHY, date.getTime());
-  }
-
-  public void setDate(Date date) {
-    this.date = date;
   }
 
   public Integer getUnitsToAggregate() {

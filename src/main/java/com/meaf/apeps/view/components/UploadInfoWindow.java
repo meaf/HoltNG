@@ -87,7 +87,7 @@ public class UploadInfoWindow extends Window implements
   }
 
   private void groupData() {
-    if(csvReceiver.getLoadedRows().isEmpty()) {
+    if (csvReceiver.getLoadedRows().isEmpty()) {
       state.setValue("No valid data found");
       return;
     }
@@ -133,7 +133,7 @@ public class UploadInfoWindow extends Window implements
         + Math.round(100 * progressBar.getValue()) + "%)");
   }
 
-  public void setShowResultsAction(Button.ClickListener listener){
+  public void setShowResultsAction(Button.ClickListener listener) {
     showResults.addClickListener(listener);
     showResults.setVisible(true);
   }

@@ -10,8 +10,8 @@ import java.util.List;
 
 @Component
 @SessionScope
-public class LocationBean  {
-private final LocationRepository locationRepository;
+public class LocationBean {
+  private final LocationRepository locationRepository;
 
   private Location location;
 
@@ -19,11 +19,11 @@ private final LocationRepository locationRepository;
     this.locationRepository = locationRepository;
   }
 
-  public void setLocation(Long locationId){
+  public void setLocation(Long locationId) {
     this.location = locationRepository.getById(locationId);
   }
 
-  public Location getCurrentLocation(){
+  public Location getCurrentLocation() {
     return this.location;
   }
 

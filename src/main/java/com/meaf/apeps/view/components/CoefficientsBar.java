@@ -5,7 +5,6 @@ import com.vaadin.data.HasValue;
 import com.vaadin.server.UserError;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.TextField;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 
@@ -71,9 +70,9 @@ public class CoefficientsBar extends MHorizontalLayout {
     return nullableInteger(tfFC.getValue());
   }
 
-  public boolean isFilled(){
-      return !(tfAlpha.getValue().isEmpty() || tfGamma.getValue().isEmpty() || tfGamma.getValue().isEmpty());
-    }
+  public boolean isFilled() {
+    return !(tfAlpha.getValue().isEmpty() || tfGamma.getValue().isEmpty() || tfGamma.getValue().isEmpty());
+  }
 
   private Double nullableDouble(String value) {
     return (value == null || "".equals(value))
@@ -111,7 +110,7 @@ public class CoefficientsBar extends MHorizontalLayout {
 
     try {
       isInvalid = !newValue.isEmpty() && (parse(newValue) < 0 || parse(newValue) > 1);
-    } catch (NumberFormatException ex){
+    } catch (NumberFormatException ex) {
       ex.printStackTrace();
       isInvalid = true;
     }
@@ -130,7 +129,7 @@ public class CoefficientsBar extends MHorizontalLayout {
 
     try {
       isPeriodNotPositive = tfPeriod.getValue().isEmpty() || parse(tfPeriod) < 1;
-    } catch (NumberFormatException ex){
+    } catch (NumberFormatException ex) {
       ex.printStackTrace();
       isPeriodNotPositive = true;
     }
@@ -141,14 +140,14 @@ public class CoefficientsBar extends MHorizontalLayout {
 
     try {
       isInvalidFCAmount = tfFC.getValue().isEmpty() || parse(tfFC) > parse(tfPeriod);
-    } catch (NumberFormatException ex){
+    } catch (NumberFormatException ex) {
       ex.printStackTrace();
       isInvalidFCAmount = true;
     }
 
     try {
       isFCNotPositive = tfFC.getValue().isEmpty() || parse(tfFC) < 1;
-    } catch (NumberFormatException ex){
+    } catch (NumberFormatException ex) {
       ex.printStackTrace();
       isFCNotPositive = true;
     }
@@ -156,8 +155,8 @@ public class CoefficientsBar extends MHorizontalLayout {
     tfFC.setComponentError(isInvalidFCAmount
         ? new UserError("Forecast can be only build for less than period duration points")
         : isFCNotPositive
-          ? new UserError("Value should be greater than zero")
-          : null
+        ? new UserError("Value should be greater than zero")
+        : null
     );
   }
 

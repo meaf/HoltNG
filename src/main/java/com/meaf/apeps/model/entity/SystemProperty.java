@@ -6,7 +6,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "system_properties")
-public class SystemProperty extends ABaseEntity{
+public class SystemProperty extends ABaseEntity {
 
   @Column(unique = true)
   private String name;

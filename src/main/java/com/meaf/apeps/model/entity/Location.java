@@ -42,7 +42,7 @@ public class Location extends ABaseEntity {
     this.longitude = longitude;
   }
 
-  public LatLon toLatLon(){
+  public LatLon toLatLon() {
     return new LatLon(this.getLatitude().doubleValue(), this.getLongitude().doubleValue());
   }
 }

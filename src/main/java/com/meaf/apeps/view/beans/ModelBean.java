@@ -9,7 +9,6 @@ import com.meaf.apeps.model.repository.WeatherStateRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
 
-import java.rmi.NoSuchObjectException;
 import java.util.List;
 
 @Component
@@ -53,7 +52,7 @@ public class ModelBean {
 
   public boolean isUserManager() {
     User user = sessionBean.getLoggedInUser();
-    if(user == null)
+    if (user == null)
       return false;
 
     return user.getAdmin() || userModelManagementRepository.canUserManage(model.getId(), user.getId()) != null;
