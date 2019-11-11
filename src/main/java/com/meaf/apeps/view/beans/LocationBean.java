@@ -30,4 +30,12 @@ public class LocationBean {
   public List<Location> listProjectLocations(Project project) {
     return locationRepository.listProjectLocation(project.getId());
   }
+
+  public List<Location> listLocations() {
+    return locationRepository.list();
+  }
+
+  public Location save(Location location) {
+    return locationRepository.saveAndFlush(location);
+  }
 }

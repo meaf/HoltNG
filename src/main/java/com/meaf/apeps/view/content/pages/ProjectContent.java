@@ -4,9 +4,7 @@ import com.meaf.apeps.model.entity.Location;
 import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.Project;
 import com.meaf.apeps.view.beans.*;
-import com.meaf.apeps.view.components.GoogleMapPreset;
-import com.meaf.apeps.view.components.LoginPopup;
-import com.meaf.apeps.view.components.ProjectCreationPopup;
+import com.meaf.apeps.view.components.*;
 import com.vaadin.data.HasValue;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.selection.SelectionEvent;
@@ -38,6 +36,7 @@ public class ProjectContent extends ABaseContent {
   private MGrid<Model> modelGrid;
   private Button btnProceed;
   private List<Project> projects;
+  private List<Model> models;
 
 
   public ProjectContent(ProjectBean projectBean, PropertiesBean propertiesBean, LocationBean locationBean, ModelBean modelBean, SessionBean sessionBean) {
@@ -60,9 +59,11 @@ public class ProjectContent extends ABaseContent {
         : createLoginBtn();
     btnProceed = createProceedBtn();
     Button btnNewProject = createNewProjectBtn();
+    Button btnNewModel = createNewModelBtn();
+    Button btnNewLocation = createNewLocationBtn();
 
     MHorizontalLayout buttons = new MHorizontalLayout();
-    buttons.add(sessionButton, btnProceed, btnNewProject);
+    buttons.add(sessionButton, btnProceed, btnNewProject, btnNewModel, btnNewLocation);
 
     layout.add(cbProjects);
     layout.add(googleMap);
@@ -83,7 +84,7 @@ public class ProjectContent extends ABaseContent {
   private void fill() {
     if (fillProjects()) {
       fillMap();
-      fillModels();
+      fillModels(true);
     }
   }
 
@@ -107,10 +108,47 @@ public class ProjectContent extends ABaseContent {
     button.setVisible(sessionBean.isUserLoggedIn());
     return button;
   }
+  private Button createNewModelBtn() {
+    Button button = new Button("New model");
+    button.addClickListener(e -> new ModelCreationPopup(e, locationBean.listLocations(), this::addModel));
+    button.setVisible(sessionBean.isUserLoggedIn());
+    return button;
+  }
+
+  private Button createNewLocationBtn() {
+    Button button = new Button("New location");
+    button.addClickListener(e -> new LocationCreationPopup(e, this::addLocation));
+    button.setVisible(sessionBean.isUserLoggedIn());
+    return button;
+  }
 
   private void addProject(Project project) {
     projects.add(project);
     cbProjects.setDataProvider(new ListDataProvider<>(projects));
+    EToast.SUCCESS.show("Saved", "Project saved successfully");
+  }
+
+  private void addModel(Model model) {
+    model.setProjectId(projectBean.getProject().getId());
+    modelBean.save(model);
+    models.add(model);
+    fillModels(false);
+    fillMap();
+    EToast.SUCCESS.show("Saved", "Model saved successfully");
+  }
+
+  private void addLocation(Location location) {
+    String descr;
+    Location saved = locationBean.save(location);
+    if(location.getKeys() != null && !location.getKeys().isEmpty()) {
+      location.getKeys().forEach(k -> k.setLocationId(saved.getId()));
+      propertiesBean.saveLocationKey(location.getKeys().iterator().next());
+      descr = "Location with Solcast key is saved successfully";
+    } else {
+      descr = "Location is saved without key successfully";
+    }
+
+    EToast.SUCCESS.show("Saved", descr);
   }
 
   private Button createProceedBtn() {
@@ -156,8 +194,9 @@ public class ProjectContent extends ABaseContent {
     googleMap.setCenter(model.getLocation().toLatLon());
   }
 
-  private void fillModels() {
-    List<Model> models = projectBean.getModels();
+  private void fillModels(boolean loadFromDB) {
+    if(loadFromDB)
+      models = projectBean.getModels();
     modelGrid.setRows(models);
   }
 

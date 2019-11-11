@@ -17,8 +17,8 @@ public class ProjectCreationPopup extends MWindow {
         .withDraggable(false)
         .withResizable(false)
         .withClosable(true)
-        .withHeight(30, Sizeable.Unit.PERCENTAGE)
-        .withWidth(20, Sizeable.Unit.PERCENTAGE);
+        .withHeight(235, Unit.PIXELS)
+        .withWidth(375, Unit.PIXELS);
 
 
     FormLayout layout = new FormLayout();
@@ -26,8 +26,10 @@ public class ProjectCreationPopup extends MWindow {
     layout.setMargin(true);
 
     TextField tfName = new TextField("Project name");
+    tfName.setWidth(100, Unit.PERCENTAGE);
     TextField tfDescr = new TextField("Project description");
-    CheckBox cbPrivate = new CheckBox("Is private?");
+    tfDescr.setWidth(100, Unit.PERCENTAGE);
+    CheckBox cbPrivate = new CheckBox("Make private?");
 
     Button btnSubmit = new Button("Create");
     btnSubmit.addClickListener(ev -> {

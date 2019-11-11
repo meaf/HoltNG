@@ -15,7 +15,7 @@ public class Model extends ABaseEntity {
   private String description;
   @Column
   private Long projectId;
-  @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+  @ManyToOne(fetch = FetchType.EAGER, cascade = {})
   @JoinColumn(name = "location_id", nullable = false)
   private Location location;
   @Column(name = "alpha", precision = 8, scale = 5)

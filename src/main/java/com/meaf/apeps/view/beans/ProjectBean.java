@@ -58,7 +58,7 @@ public class ProjectBean {
 
   public Project save(Project p, User user) {
 
-    Project saved = projectRepository.save(p);
+    Project saved = projectRepository.saveAndFlush(p);
     if (saved.getPrivateProject()) {
       UserProjectRelation relation = new UserProjectRelation();
       relation.setUserId(user.getId());

@@ -1,6 +1,5 @@
 package com.meaf.apeps.view.components;
 
-import com.vaadin.server.Sizeable;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.LoginForm;
 import com.vaadin.ui.Window;
@@ -14,12 +13,13 @@ public class LoginPopup extends MWindow {
         .withDraggable(false)
         .withResizable(false)
         .withClosable(true)
-        .withHeight(30, Sizeable.Unit.PERCENTAGE)
-        .withWidth(15, Sizeable.Unit.PERCENTAGE);
+        .withHeight(300, Unit.PIXELS)
+        .withWidth(280, Unit.PIXELS);
 
     LoginForm loginForm = new LoginForm();
     loginForm.addLoginListener(loginListener);
     window.setContent(loginForm);
+    window.center();
 
     e.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
     e.getButton().getUI().addWindow(window);

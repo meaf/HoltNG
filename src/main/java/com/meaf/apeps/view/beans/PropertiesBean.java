@@ -29,4 +29,7 @@ public class PropertiesBean {
   }
 
 
+  public void saveLocationKey(LocationKey key) {
+    locationKeyRepository.saveAndFlush(key);
+  }
 }

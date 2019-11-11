@@ -41,8 +41,12 @@ public class ModelBean {
     return weatherStateRepository.findDataByModelId(model.getId());
   }
 
-  public void saveModel() {
+  public void saveCurrentModel() {
     modelRepository.saveAndFlush(model);
+  }
+
+  public Model save(Model model){
+    return modelRepository.saveAndFlush(model);
   }
 
   public void mergeEntries(List<WeatherStateData> data) {

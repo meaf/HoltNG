@@ -167,7 +167,7 @@ public class ModelContent extends ABaseContent {
     updButton.addClickListener(e -> {
       List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocation().getId()));
       if (weatherStateDataList == null) {
-        EToast.ERROR.show("Http update error", "could not communicate to data sever");
+        EToast.ERROR.show("Http update error", "could not communicate to data sever \nCheck if API keys are correct");
         return;
       }
       if (weatherStateDataList.isEmpty())
@@ -180,6 +180,8 @@ public class ModelContent extends ABaseContent {
   }
 
   private List<WeatherStateData> returnOnlyMissingValues(List<WeatherStateData> weatherStateDataList) {
+    if(weatherStateDataList == null)
+      return null;
     return weatherStateDataList.stream().filter(e -> isDataMissing(rowsData, e)).collect(Collectors.toList());
   }
 
@@ -247,7 +249,7 @@ public class ModelContent extends ABaseContent {
     modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
     modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
     modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
-    modelBean.saveModel();
+    modelBean.saveCurrentModel();
 
     EToast.SUCCESS.show("Success", "Model params are saved");
   }

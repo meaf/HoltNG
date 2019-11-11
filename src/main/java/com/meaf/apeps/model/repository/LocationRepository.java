@@ -13,4 +13,7 @@ public interface LocationRepository extends IRepository<Location> {
 
   @Query("SELECT m.location FROM Model m where m.projectId = :projectId")
   List<Location> listProjectLocation(Long projectId);
+
+  @Query("SELECT l FROM Location l")
+  List<Location> list();
 }
