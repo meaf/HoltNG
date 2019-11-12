@@ -3,6 +3,7 @@ package com.meaf.apeps.view.content.pages;
 import com.meaf.apeps.model.entity.Location;
 import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.Project;
+import com.meaf.apeps.model.entity.User;
 import com.meaf.apeps.view.beans.*;
 import com.meaf.apeps.view.components.*;
 import com.vaadin.data.HasValue;
@@ -90,8 +91,13 @@ public class ProjectContent extends ABaseContent {
 
   private Button createLoginBtn() {
     Button btnLogin = new Button("Login");
-    btnLogin.addClickListener(e -> new LoginPopup(e, sessionBean::authenticate));
+    btnLogin.addClickListener(e -> new LoginPopup(e, sessionBean::authenticate, u -> register(e, u)));
     return btnLogin;
+  }
+
+  private void register(Button.ClickEvent e, User user) {
+    sessionBean.register(user);
+    new LoginPopup(e, sessionBean::authenticate, u -> register(e, u));
   }
 
   private Button createLogoutBtn() {

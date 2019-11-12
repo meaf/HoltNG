@@ -18,22 +18,19 @@ public class UserBean {
   }
 
   public User findUser(String uname, String pass) {
-    byte[] pwBytes = DigestUtils.sha512(Base64.encodeBase64String(uname.getBytes()) + pass);
-    String b64Pass = Base64.encodeBase64String(pwBytes);
-
+    String b64Pass = encodePass(uname, pass);
     return userRepository.checkUser(uname, b64Pass);
   }
 
-  public User createUser(String uname, String pass) {
-    String saltedPass = Base64.encodeBase64String(uname.getBytes()) + pass;
-    byte[] pwBytes = DigestUtils.sha512(saltedPass);
-    String b64Pass = Base64.encodeBase64String(pwBytes);
 
-    User user = new User();
-    user.setName(uname);
+  public User createUser(User user) {
+    String b64Pass = encodePass(user.getName(), user.getPassword());
     user.setPassword(b64Pass);
     return userRepository.save(user);
   }
 
-
+  private String encodePass(String uname, String pass) {
+    byte[] pwBytes = DigestUtils.sha512(Base64.encodeBase64String(uname.getBytes()) + pass);
+    return Base64.encodeBase64String(pwBytes);
+  }
 }

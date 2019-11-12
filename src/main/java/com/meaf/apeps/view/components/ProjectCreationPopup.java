@@ -3,7 +3,6 @@ package com.meaf.apeps.view.components;
 import com.meaf.apeps.model.entity.Project;
 import com.meaf.apeps.model.entity.User;
 import com.meaf.apeps.view.beans.ProjectBean;
-import com.vaadin.server.Sizeable;
 import com.vaadin.ui.*;
 import org.vaadin.viritin.layouts.MWindow;
 

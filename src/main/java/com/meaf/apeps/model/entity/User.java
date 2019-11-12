@@ -14,6 +14,8 @@ public class User extends ABaseEntity {
   private String password;
   @Column
   private Boolean isAdmin;
+  @Column
+  private String email;
 
   public String getName() {
     return name;
@@ -37,5 +39,13 @@ public class User extends ABaseEntity {
 
   public void setAdmin(Boolean admin) {
     isAdmin = admin;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getEmail() {
+    return email;
   }
 }

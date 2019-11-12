@@ -1,6 +1,7 @@
 package com.meaf.apeps.view.beans;
 
 import com.meaf.apeps.model.entity.User;
+import com.meaf.apeps.view.components.EToast;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.LoginForm;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,7 @@ public class SessionBean {
       this.user = user;
       e.getSource().getUI().getPage().reload();
     }
-
+    EToast.ERROR.show("Error", "Incorrect username or password8");
     return false;
   }
 
@@ -37,5 +38,9 @@ public class SessionBean {
   public void logout(Button.ClickEvent e) {
     user = null;
     e.getButton().getUI().getPage().reload();
+  }
+
+  public void register(User user) {
+    userBean.createUser(user);
   }
 }

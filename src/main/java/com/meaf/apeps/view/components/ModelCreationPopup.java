@@ -6,11 +6,9 @@ import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.server.Sizeable;
 import com.vaadin.ui.*;
 import org.vaadin.viritin.fields.MTextField;
-import org.vaadin.viritin.label.RichText;
 import org.vaadin.viritin.layouts.MWindow;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public class ModelCreationPopup {
