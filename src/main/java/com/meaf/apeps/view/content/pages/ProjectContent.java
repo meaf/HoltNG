@@ -179,10 +179,10 @@ public class ProjectContent extends ABaseContent {
         .setExpandRatio(2);
 
     grid.addColumn(Model::getDataAmount).setCaption("Data amount").setExpandRatio(1);
-    grid.addColumn(Model::getGhiForecast).setCaption("Forecast(GHI)").setExpandRatio(1);
+    grid.addColumn(Model::getSolarForecastCell, new DynamicsRenderer()).setCaption("Forecast(GHI)").setExpandRatio(1);
     grid.addColumn(Model::getAvgGhi).setCaption("Avg GHI").setExpandRatio(1);
     grid.addColumn(Model::getMseWind).setCaption("MSE(GHI)").setExpandRatio(1);
-    grid.addColumn(Model::getWindSpeedForecast).setCaption("Forecast(Wind)").setExpandRatio(1);
+    grid.addColumn(Model::getWindForecastCell, new DynamicsRenderer()).setCaption("Forecast(Wind)").setExpandRatio(1);
     grid.addColumn(Model::getAvgWindSpeed).setCaption("Avg wind speed").setExpandRatio(1);
     grid.addColumn(Model::getMseSolar).setCaption("MSE(Wind)").setExpandRatio(1);
 

@@ -196,6 +196,10 @@ public class HoltWinters {
     this.dateInterval = dateInterval;
   }
 
+  public Double getLastActualData() {
+    return S.get(S.size() - 1).asDouble();
+  }
+
   public enum EDateInterval {
     MONTHLY, DAILY;
   }

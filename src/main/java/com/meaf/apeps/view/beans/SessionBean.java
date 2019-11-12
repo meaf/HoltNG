@@ -22,6 +22,7 @@ public class SessionBean {
     if (user != null) {
       this.user = user;
       e.getSource().getUI().getPage().reload();
+      return true;
     }
     EToast.ERROR.show("Error", "Incorrect username or password8");
     return false;

@@ -38,6 +38,10 @@ public class Model extends ABaseEntity {
   private Double windSpeedForecast;
   @Column
   private Double ghiForecast;
+  @Column
+  private Double windSpeedLast;
+  @Column
+  private Double ghiLast;
 
   @Formula("(select count(*) from weather_state_data d where d.model_id = id)")
   private Double dataAmount;
@@ -161,4 +165,31 @@ public class Model extends ABaseEntity {
   public void setDataAmount(Double dataAmount) {
     this.dataAmount = dataAmount;
   }
+
+  public Double getWindSpeedLast() {
+    return windSpeedLast;
+  }
+
+  public void setWindSpeedLast(Double windSpeedLast) {
+    this.windSpeedLast = windSpeedLast;
+  }
+
+  public Double getGhiLast() {
+    return ghiLast;
+  }
+
+  public void setGhiLast(Double ghiLast) {
+    this.ghiLast = ghiLast;
+  }
+
+  public String getWindForecastCell() {
+    return windSpeedForecast == null || windSpeedLast == null
+        ? "" : windSpeedForecast + " " + windSpeedLast;
+  }
+
+  public String getSolarForecastCell() {
+    return ghiForecast == null || ghiLast == null
+        ? "" : ghiForecast + " " + ghiLast;
+  }
+
 }

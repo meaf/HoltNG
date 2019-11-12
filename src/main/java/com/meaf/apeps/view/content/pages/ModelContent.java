@@ -108,7 +108,9 @@ public class ModelContent extends ABaseContent {
     ).withFullWidth();
 
     Upload uploadButton = createUploadButton();
+    uploadButton.setVisible(modelBean.isUserManager());
     Button updateButton = createUpdateButton();
+    updateButton.setVisible(modelBean.isUserManager());
     MVerticalLayout dataTableOptions = new MVerticalLayout(
         entriesGrid,
         uploadButton,
@@ -242,9 +244,13 @@ public class ModelContent extends ABaseContent {
     if (method.getTargetType() == ETargetValues.SOLAR) {
       modelBean.getModel().setGhiForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseSolar(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
+      if(method.getDateInterval() == HoltWinters.EDateInterval.MONTHLY)
+        modelBean.getModel().setGhiLast(method.getLastActualData());
     } else {
       modelBean.getModel().setWindSpeedForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseWind(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
+      if(method.getDateInterval() == HoltWinters.EDateInterval.MONTHLY)
+        modelBean.getModel().setWindSpeedLast(method.getLastActualData());
     }
     modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
     modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
