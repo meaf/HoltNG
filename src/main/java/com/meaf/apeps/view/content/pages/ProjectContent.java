@@ -13,7 +13,9 @@ import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
 import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapMarker;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.renderers.ComponentRenderer;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.grid.MGrid;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
@@ -179,22 +181,31 @@ public class ProjectContent extends ABaseContent {
   private MGrid<Model> createModelGrid() {
     MGrid<Model> grid = new MGrid<>();
     grid.setSizeFull();
-    grid.addColumn(Model::getName).setCaption("Name").setExpandRatio(2);
+    grid.addColumn(Model::getName).setCaption("Name").setExpandRatio(5);
 
     grid.addColumn(m -> m.getLocation().getLatitude() + " / " + m.getLocation().getLongitude()).setCaption("Lat/Lon")
-        .setExpandRatio(2);
+        .setExpandRatio(10);
 
-    grid.addColumn(Model::getDataAmount).setCaption("Data amount").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getSolarForecastCell()), new DynamicsRenderer()).setCaption("Forecast(GHI)").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getAvgGhi())).setCaption("Avg GHI").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getMseWind())).setCaption("MSE(GHI)").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getWindForecastCell()), new DynamicsRenderer()).setCaption("Forecast(Wind)").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getAvgWindSpeed())).setCaption("Avg wind speed").setExpandRatio(1);
-    grid.addColumn(m -> format(m.getMseSolar())).setCaption("MSE(Wind)").setExpandRatio(1);
+    grid.addColumn(Model::getDataAmount).setCaption("Data amount").setExpandRatio(5);
+    grid.addColumn(m -> format(m.getSolarForecastCell()), new DynamicsRenderer()).setCaption("Forecast(GHI)").setExpandRatio(10);
+    grid.addColumn(m -> format(m.getAvgGhi())).setCaption("Avg GHI").setExpandRatio(5);
+    grid.addColumn(m -> format(m.getMseWind())).setCaption("MSE(GHI)").setExpandRatio(5);
+    grid.addColumn(m -> format(m.getWindForecastCell()), new DynamicsRenderer()).setCaption("Forecast(Wind)").setExpandRatio(10);
+    grid.addColumn(m -> format(m.getAvgWindSpeed())).setCaption("Avg wind speed").setExpandRatio(5);
+    grid.addColumn(m -> format(m.getMseSolar())).setCaption("MSE(Wind)").setExpandRatio(10);
+    if(sessionBean.isUserLoggedIn())
+      grid.addColumn(this::isManageable, new ComponentRenderer()).setCaption("Manageable").setExpandRatio(5);
 
     grid.addSelectionListener(this::selectModel);
 
     return grid;
+  }
+
+  private com.vaadin.ui.Component isManageable(Model model) {
+    CheckBox cb = new CheckBox();
+    cb.setValue(modelBean.isUserManager(model));
+    cb.setReadOnly(true);
+    return cb;
   }
 
   private void selectModel(SelectionEvent<Model> e) {

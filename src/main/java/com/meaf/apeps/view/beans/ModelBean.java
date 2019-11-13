@@ -54,7 +54,7 @@ public class ModelBean {
   }
 
 
-  public boolean isUserManager() {
+  public boolean isUserManager(Model model) {
     User user = sessionBean.getLoggedInUser();
     if (user == null)
       return false;

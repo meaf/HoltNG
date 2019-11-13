@@ -13,6 +13,7 @@ import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.PropertiesBean;
 import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.*;
+import com.vaadin.flow.component.Key;
 import com.vaadin.server.Sizeable;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
@@ -73,7 +74,7 @@ public class ModelContent extends ABaseContent {
 
     btnCalculate = createCalculateButton();
     btnSaveResults = createSaveButton();
-    btnSaveResults.setVisible(modelBean.isUserManager());
+    btnSaveResults.setVisible(modelBean.isUserManager(modelBean.getModel()));
     Button btnClear = createClearButton();
 
     lhCoefficients = new CoefficientsBar(modelBean.getModel());
@@ -93,7 +94,7 @@ public class ModelContent extends ABaseContent {
     tfMSEPerc.setEnabled(false);
 
     Button btnReturnToProject = new Button("Return");
-    btnReturnToProject.addClickListener(e -> changeState(StateBean.EState.Project));
+    btnReturnToProject.addClickListener(this::toProjects);
 
     MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly), btnReturnToProject);
     hlBottomBar.setCaption("Average node MSE");
@@ -109,9 +110,9 @@ public class ModelContent extends ABaseContent {
     ).withFullWidth();
 
     Upload uploadButton = createUploadButton();
-    uploadButton.setVisible(modelBean.isUserManager());
+    uploadButton.setVisible(modelBean.isUserManager(modelBean.getModel()));
     Button updateButton = createUpdateButton();
-    updateButton.setVisible(modelBean.isUserManager());
+    updateButton.setVisible(modelBean.isUserManager(modelBean.getModel()));
     MVerticalLayout dataTableOptions = new MVerticalLayout(
         entriesGrid,
         uploadButton,
@@ -369,5 +370,13 @@ public class ModelContent extends ABaseContent {
     this.chartWrapper.add(components).setSizeFull();
   }
 
+  private void toProjects(Button.ClickEvent e){
+    method = null;
+    tfMSE.clear();
+    tfMSEPerc.clear();
+    tfMAE.clear();
+    tfRMSE.clear();
+    changeState(StateBean.EState.Project);
+  }
 
 }
