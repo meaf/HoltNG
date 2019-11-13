@@ -8,6 +8,8 @@ import com.vaadin.ui.*;
 
 import java.util.List;
 
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
+
 @StyleSheet("vaadin://uploadWindow.css")
 public class UploadInfoWindow extends Window implements
     Upload.StartedListener, Upload.ProgressListener,
@@ -32,6 +34,7 @@ public class UploadInfoWindow extends Window implements
 
     setResizable(false);
     setDraggable(false);
+    setModal(true);
 
     final FormLayout uploadInfoLayout = new FormLayout();
     setContent(uploadInfoLayout);
@@ -48,6 +51,7 @@ public class UploadInfoWindow extends Window implements
     stateLayout.addComponent(cancelButton);
 
     showResults = new Button("Show results");
+    showResults.setClickShortcut(ENTER);
     showResults.addClickListener(event -> upload.interruptUpload());
     showResults.setVisible(false);
     showResults.setStyleName("small");

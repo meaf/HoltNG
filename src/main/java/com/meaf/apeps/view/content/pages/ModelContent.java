@@ -6,6 +6,7 @@ import com.meaf.apeps.calculations.aggregate.WeatherAggregator;
 import com.meaf.apeps.input.csv.CSVFileReceiver;
 import com.meaf.apeps.input.http.RequestHttpUpdate;
 import com.meaf.apeps.model.entity.Location;
+import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
@@ -13,7 +14,7 @@ import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.PropertiesBean;
 import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.*;
-import com.vaadin.flow.component.Key;
+import com.vaadin.data.HasValue;
 import com.vaadin.server.Sizeable;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.meaf.apeps.utils.Formatter.format;
-import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
+import static com.vaadin.event.ShortcutAction.KeyCode.*;
 
 @Component
 public class ModelContent extends ABaseContent {
@@ -77,7 +78,7 @@ public class ModelContent extends ABaseContent {
     btnSaveResults.setVisible(modelBean.isUserManager(modelBean.getModel()));
     Button btnClear = createClearButton();
 
-    lhCoefficients = new CoefficientsBar(modelBean.getModel());
+    lhCoefficients = new CoefficientsBar(modelBean.getModel(), cxSolarStats.getValue());
     lhCoefficients.addButtons(btnCalculate, btnSaveResults, btnClear);
 
     tfMSE.setCaption("MSE");
@@ -94,9 +95,14 @@ public class ModelContent extends ABaseContent {
     tfMSEPerc.setEnabled(false);
 
     Button btnReturnToProject = new Button("Return");
+    btnReturnToProject.setClickShortcut(ESCAPE);
+    btnReturnToProject.setWidth(100, Sizeable.Unit.PERCENTAGE);
     btnReturnToProject.addClickListener(this::toProjects);
 
+    cxSolarStats.addValueChangeListener(this::toggleModelType);
+
     MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly), btnReturnToProject);
+    hlBottomBar.setComponentAlignment(btnReturnToProject, Alignment.MIDDLE_CENTER);
     hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
@@ -109,17 +115,14 @@ public class ModelContent extends ABaseContent {
         hlBottomBar
     ).withFullWidth();
 
-    Upload uploadButton = createUploadButton();
-    uploadButton.setVisible(modelBean.isUserManager(modelBean.getModel()));
-    Button updateButton = createUpdateButton();
-    updateButton.setVisible(modelBean.isUserManager(modelBean.getModel()));
+    Button btnDisplayFullGrid = createGridPropertiesButton();
+
+
     MVerticalLayout dataTableOptions = new MVerticalLayout(
         entriesGrid,
-        uploadButton,
-        updateButton
+        btnDisplayFullGrid
     ).withExpand(entriesGrid, 10)
-        .withExpand(updateButton, 1)
-        .withExpand(uploadButton, 1)
+        .withExpand(btnDisplayFullGrid, 1)
         .withFullHeight();
 
     dataTableOptions.setSizeFull();
@@ -137,7 +140,7 @@ public class ModelContent extends ABaseContent {
         aboutBox,
         data
     );
-    updateDataGrid();
+    updateDataGrid(entriesGrid);
 
     if (lhCoefficients.isFilled()) {
       try {
@@ -148,6 +151,104 @@ public class ModelContent extends ABaseContent {
     }
 
     return content;
+  }
+
+  private void toggleModelType(HasValue.ValueChangeEvent<Boolean> e) {
+    boolean isSolar = e.getValue();
+    Model model = modelBean.getModel();
+
+    if(isSolar){
+      if(model.getAlpha_s() != null)
+        lhCoefficients.setAlpha(model.getAlpha_s().doubleValue());
+      if(model.getBeta_s() != null)
+        lhCoefficients.setBeta(model.getBeta_s().doubleValue());
+      if(model.getGamma_s() != null)
+        lhCoefficients.setGamma(model.getGamma_s().doubleValue());
+    } else {
+      if (model.getAlpha_w() != null)
+        lhCoefficients.setAlpha(model.getAlpha_w().doubleValue());
+      if (model.getBeta_w() != null)
+        lhCoefficients.setBeta(model.getBeta_w().doubleValue());
+      if (model.getGamma_w() != null)
+        lhCoefficients.setGamma(model.getGamma_w().doubleValue());
+    }
+
+    if(lhCoefficients.check())
+      calculate();
+  }
+
+  private Button createGridPropertiesButton() {
+    Button button = new Button("Data management");
+    button.setVisible(modelBean.isUserManager(modelBean.getModel()));
+    button.addClickListener(this::createPropertiesWindow);
+    return button;
+  }
+
+  private void createPropertiesWindow(Button.ClickEvent clickEvent) {
+    clickEvent.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
+    MWindow window = new MWindow("Model Data")
+        .withCenter()
+        .withModal(true)
+        .withClosable(true)
+        .withHeight(60, Sizeable.Unit.PERCENTAGE)
+        .withWidth(60, Sizeable.Unit.PERCENTAGE);
+
+    MGrid<WeatherStateData> grid = getDetailedGridBase();
+
+    grid.sort("date");
+    grid.setRows(rowsData);
+
+    MHorizontalLayout buttons = new MHorizontalLayout();
+
+    buttons.add(createUploadButton(), createUpdateButton(window));
+    buttons.add(createDeleteButton(grid), createDeleteAllButton(grid));
+
+    MVerticalLayout layout = new MVerticalLayout(
+        grid,
+        buttons)
+        .withExpand(grid, 1)
+        .withFullSize()
+        .withAlign(grid, Alignment.MIDDLE_CENTER)
+        .withAlign(buttons, Alignment.MIDDLE_CENTER);
+
+    window.setContent(layout);
+
+    clickEvent.getButton().getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
+    clickEvent.getButton().getUI().addWindow(window);
+  }
+
+  private Button createDeleteButton(MGrid<WeatherStateData> grid) {
+    Button button = new Button("Delete");
+    button.setClickShortcut(DELETE);
+    button.addClickListener(e -> new ConfirmationPopup(e, "Delete selected rows?", d -> {
+      deleteRows(grid.getSelectedItems());
+      updateDataGrid(entriesGrid);
+      updateDataGrid(grid);
+    }));
+    return button;
+  }
+
+  private Button createDeleteAllButton(MGrid<WeatherStateData> grid) {
+    Button button = new Button("Delete All");
+    button.addClickListener(e -> new ConfirmationPopup(e, "Delete all rows?", d -> {
+      deleteRows(rowsData);
+      updateDataGrid(entriesGrid);
+      updateDataGrid(grid);
+    }));
+    return button;
+  }
+
+  private void deleteRows(Iterable<WeatherStateData> rows) {
+    modelBean.removeItems(rows);
+    rowsData = modelBean.getEntries();
+  }
+
+  private MGrid<WeatherStateData> getDetailedGridBase() {
+    return new MGrid<>(WeatherStateData.class)
+        .withProperties("date", "ghi", "ebh", "dni", "dhi", "cloudOpacityFormatted", "windSpeed")
+        .withColumnHeaders("date", "ghi", "ebh", "dni", "dhi", "cloudOpacity", "windSpeed")
+        .withWidth(90, Sizeable.Unit.PERCENTAGE)
+        .withHeight(90, Sizeable.Unit.PERCENTAGE);
   }
 
   private GoogleMap getMap() {
@@ -166,7 +267,7 @@ public class ModelContent extends ABaseContent {
     return btnClear;
   }
 
-  private Button createUpdateButton() {
+  private Button createUpdateButton(MWindow parentWindow) {
     Button updButton = new Button("Update");
     updButton.addClickListener(e -> {
       List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocation().getId()));
@@ -177,14 +278,14 @@ public class ModelContent extends ABaseContent {
       if (weatherStateDataList.isEmpty())
         EToast.SUCCESS.show("Everything is up-to-date", "nothing to update");
 
-      createNewDataWindow(updButton, weatherStateDataList, false);
+      createNewDataWindow(parentWindow, weatherStateDataList, false);
     });
 
     return updButton;
   }
 
   private List<WeatherStateData> returnOnlyMissingValues(List<WeatherStateData> weatherStateDataList) {
-    if(weatherStateDataList == null)
+    if (weatherStateDataList == null)
       return null;
     return weatherStateDataList.stream().filter(e -> isDataMissing(rowsData, e)).collect(Collectors.toList());
   }
@@ -223,6 +324,7 @@ public class ModelContent extends ABaseContent {
   private Button createCalculateButton() {
     Button button = new Button("Calculate");
     button.setClickShortcut(ENTER);
+    button.setStyleName("primary");
     button.addClickListener(e -> {
       try {
         calculate();
@@ -235,49 +337,52 @@ public class ModelContent extends ABaseContent {
 
   private Button createSaveButton() {
     return new Button("Save results", e -> {
-      try {
-        calculate();
-      } catch (IllegalArgumentException ex) {
-        ex.printStackTrace();
-        return;
-      }
-      saveModel();
+      new ConfirmationPopup(e, "Apply parameters to model", c -> {
+        try {
+          calculate();
+          saveModel();
+        } catch (IllegalArgumentException ex) {
+          ex.printStackTrace();
+        }
+      });
     });
   }
 
   private void saveModel() {
+    if (method.getDateInterval() != HoltWinters.EDateInterval.MONTHLY) {
+      EToast.ERROR.show("Error", "Can save only monthly model");
+      return;
+    }
+
     if (method.getTargetType() == ETargetValues.SOLAR) {
       modelBean.getModel().setGhiForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseSolar(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
-      if(method.getDateInterval() == HoltWinters.EDateInterval.MONTHLY)
-        modelBean.getModel().setGhiLast(method.getLastActualData());
+      modelBean.getModel().setGhiLast(method.getLastActualData());
+      modelBean.getModel().setAlpha_s(new BigDecimal(lhCoefficients.getAlpha()));
+      modelBean.getModel().setBeta_s(new BigDecimal(lhCoefficients.getBeta()));
+      modelBean.getModel().setGamma_s(new BigDecimal(lhCoefficients.getGamma()));
     } else {
       modelBean.getModel().setWindSpeedForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseWind(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
-      if(method.getDateInterval() == HoltWinters.EDateInterval.MONTHLY)
-        modelBean.getModel().setWindSpeedLast(method.getLastActualData());
+      modelBean.getModel().setWindSpeedLast(method.getLastActualData());
+      modelBean.getModel().setAlpha_w(new BigDecimal(lhCoefficients.getAlpha()));
+      modelBean.getModel().setBeta_w(new BigDecimal(lhCoefficients.getBeta()));
+      modelBean.getModel().setGamma_w(new BigDecimal(lhCoefficients.getGamma()));
     }
-    modelBean.getModel().setAlpha(new BigDecimal(lhCoefficients.getAlpha()));
-    modelBean.getModel().setBeta(new BigDecimal(lhCoefficients.getBeta()));
-    modelBean.getModel().setGamma(new BigDecimal(lhCoefficients.getGamma()));
     modelBean.saveCurrentModel();
 
     EToast.SUCCESS.show("Success", "Model params are saved");
   }
 
   private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
-    src.getUI().getWindows().stream().filter(w -> w instanceof MWindow).forEach(Window::close);
     MWindow window = new MWindow("New Data")
         .withCenter()
+        .withModal(true)
         .withClosable(true)
         .withHeight(60, Sizeable.Unit.PERCENTAGE)
         .withWidth(60, Sizeable.Unit.PERCENTAGE);
 
-    MGrid<WeatherStateData> grid = new MGrid<>(WeatherStateData.class)
-        .withProperties("date", "ghi", "ebh", "dni", "dhi", "cloudOpacity", "windSpeed")
-        .withColumnHeaders("date", "ghi", "ebh", "dni", "dhi", "cloudOpacity", "windSpeed")
-        .withWidth(90, Sizeable.Unit.PERCENTAGE)
-        .withHeight(90, Sizeable.Unit.PERCENTAGE);
+    MGrid<WeatherStateData> grid = getDetailedGridBase();
 
     if (!displayWindColumn)
       grid.removeColumn("windSpeed");
@@ -291,7 +396,7 @@ public class ModelContent extends ABaseContent {
       data.forEach(d -> d.setModelId(id));
       modelBean.mergeEntries(data);
       EToast.SUCCESS.show("Merged", data.size() + " entries were added to model");
-      updateDataGrid();
+      updateDataGrid(entriesGrid);
       window.close();
     });
 
@@ -305,7 +410,6 @@ public class ModelContent extends ABaseContent {
 
     window.setContent(layout);
     src.getUI().addWindow(window);
-
   }
 
   private void calculate() {
@@ -348,13 +452,13 @@ public class ModelContent extends ABaseContent {
     redrawChart();
   }
 
-  private void updateDataGrid() {
+  private void updateDataGrid(MGrid<WeatherStateData> grid) {
     List<WeatherStateData> dataList = modelBean.getEntries().stream().peek(
         e -> e.setWindSpeed(Double.parseDouble(format(e.getWindSpeed())))
     ).collect(Collectors.toList());
 
     this.rowsData = dataList;
-    entriesGrid.setRows(dataList);
+    grid.setRows(dataList);
     enableModelButtons(!dataList.isEmpty());
   }
 
@@ -370,7 +474,7 @@ public class ModelContent extends ABaseContent {
     this.chartWrapper.add(components).setSizeFull();
   }
 
-  private void toProjects(Button.ClickEvent e){
+  private void toProjects(Button.ClickEvent e) {
     method = null;
     tfMSE.clear();
     tfMSEPerc.clear();

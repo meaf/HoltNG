@@ -61,4 +61,8 @@ public class ModelBean {
 
     return user.getAdmin() || userModelManagementRepository.canUserManage(model.getId(), user.getId()) != null;
   }
+
+  public void removeItems(Iterable<WeatherStateData> stateData) {
+    weatherStateRepository.deleteAll(stateData);
+  }
 }

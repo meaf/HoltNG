@@ -22,12 +22,18 @@ public class Model extends ABaseEntity {
   @ManyToOne(fetch = FetchType.EAGER, cascade = {})
   @JoinColumn(name = "location_id", nullable = false)
   private Location location;
-  @Column(name = "alpha", precision = 8, scale = 5)
-  private BigDecimal alpha;
-  @Column(name = "beta", precision = 8, scale = 5)
-  private BigDecimal beta;
-  @Column(name = "gamma", precision = 8, scale = 5)
-  private BigDecimal gamma;
+  @Column(name = "alpha_s", precision = 8, scale = 5)
+  private BigDecimal alpha_s;
+  @Column(name = "beta_s", precision = 8, scale = 5)
+  private BigDecimal beta_s;
+  @Column(name = "gamma_s", precision = 8, scale = 5)
+  private BigDecimal gamma_s;
+  @Column(name = "alpha_w", precision = 8, scale = 5)
+  private BigDecimal alpha_w;
+  @Column(name = "beta_w", precision = 8, scale = 5)
+  private BigDecimal beta_w;
+  @Column(name = "gamma_w", precision = 8, scale = 5)
+  private BigDecimal gamma_w;
   @Column(name = "mse_wind", precision = 15, scale = 5)
   private BigDecimal mseWind;
   @Column(name = "mse_solar", precision = 15, scale = 5)
@@ -74,28 +80,52 @@ public class Model extends ABaseEntity {
     this.projectId = projectId;
   }
 
-  public BigDecimal getAlpha() {
-    return alpha;
+  public BigDecimal getAlpha_s() {
+    return alpha_s;
   }
 
-  public void setAlpha(BigDecimal alpha) {
-    this.alpha = alpha;
+  public void setAlpha_s(BigDecimal alpha_s) {
+    this.alpha_s = alpha_s;
   }
 
-  public BigDecimal getBeta() {
-    return beta;
+  public BigDecimal getBeta_s() {
+    return beta_s;
   }
 
-  public void setBeta(BigDecimal beta) {
-    this.beta = beta;
+  public void setBeta_s(BigDecimal beta_s) {
+    this.beta_s = beta_s;
   }
 
-  public BigDecimal getGamma() {
-    return gamma;
+  public BigDecimal getGamma_s() {
+    return gamma_s;
   }
 
-  public void setGamma(BigDecimal gamma) {
-    this.gamma = gamma;
+  public void setGamma_s(BigDecimal gamma_s) {
+    this.gamma_s = gamma_s;
+  }
+
+  public BigDecimal getAlpha_w() {
+    return alpha_w;
+  }
+
+  public void setAlpha_w(BigDecimal alpha_w) {
+    this.alpha_w = alpha_w;
+  }
+
+  public BigDecimal getBeta_w() {
+    return beta_w;
+  }
+
+  public void setBeta_w(BigDecimal beta_w) {
+    this.beta_w = beta_w;
+  }
+
+  public BigDecimal getGamma_w() {
+    return gamma_w;
+  }
+
+  public void setGamma_w(BigDecimal gamma_w) {
+    this.gamma_w = gamma_w;
   }
 
   public BigDecimal getMseWind() {
@@ -183,5 +213,6 @@ public class Model extends ABaseEntity {
     return ghiForecast == null || ghiLast == null
         ? "" : format(ghiForecast) + " " + format(ghiLast);
   }
+
 
 }

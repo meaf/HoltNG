@@ -1,6 +1,7 @@
 package com.meaf.apeps.model.entity;
 
 import com.meaf.apeps.model.TimelessDate;
+import com.meaf.apeps.utils.Formatter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -74,6 +75,10 @@ public class WeatherStateData extends ABaseEntity {
 
   public Double getCloudOpacity() {
     return cloudOpacity;
+  }
+
+  public String getCloudOpacityFormatted() {
+    return Formatter.format(cloudOpacity);
   }
 
   public void setCloudOpacity(Double cloudOpacity) {

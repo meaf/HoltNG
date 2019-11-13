@@ -19,11 +19,11 @@ public class CoefficientsBar extends MHorizontalLayout {
   private TextField tfPeriod;
   private TextField tfFC;
 
-  public CoefficientsBar(Model model) {
+  public CoefficientsBar(Model model, Boolean isSolar) {
     super();
-    this.tfAlpha = new TextField("α, level smoothing", defEmpty(model.getAlpha()));
-    this.tfBeta = new TextField("β, trend smoothing", defEmpty(model.getBeta()));
-    this.tfGamma = new TextField("γ, seasonal smoothing", defEmpty(model.getGamma()));
+    this.tfAlpha = new TextField("α, level smoothing", defEmpty(isSolar ? model.getAlpha_s() : model.getAlpha_w()));
+    this.tfBeta = new TextField("β, trend smoothing", defEmpty(isSolar ? model.getBeta_s() : model.getBeta_w()));
+    this.tfGamma = new TextField("γ, seasonal smoothing", defEmpty(isSolar ? model.getGamma_s() : model.getGamma_w()));
     this.tfPeriod = new TextField("period", defEmpty(model.getPeriod()));
     this.tfFC = new TextField("forecast points", "3");
     this.add(tfAlpha, tfBeta, tfGamma, tfPeriod, tfFC);

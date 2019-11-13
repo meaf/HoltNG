@@ -5,6 +5,8 @@ import elemental.json.JsonValue;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
+import static com.meaf.apeps.utils.Formatter.format;
+
 public class DynamicsRenderer extends HtmlRenderer {
 
   @Override
@@ -26,10 +28,10 @@ public class DynamicsRenderer extends HtmlRenderer {
       );
 
     String value = String.format("<span style=\"pointer-events: none;\">%s <small %s><b>%s%s</b></small></span>",
-      Jsoup.clean(Double.toString(fc), Whitelist.basic()),
+      Jsoup.clean(format(fc), Whitelist.basic()),
       colorStyle,
       isPositiveChange ? "+" : "",
-      Jsoup.clean(Double.toString(dynamics), Whitelist.basic())
+      Jsoup.clean(format(dynamics), Whitelist.basic())
     );
 
     return super.encode(value);
