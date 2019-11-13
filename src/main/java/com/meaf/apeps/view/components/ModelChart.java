@@ -9,13 +9,10 @@ import com.vaadin.addon.charts.model.*;
 import com.vaadin.ui.Component;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ModelChart extends AbstractVaadinChartExample {
-
-  private static DecimalFormat df = new DecimalFormat("#.##");
 
   private ETargetValues targetType = ETargetValues.SOLAR;
   private List<DatedValue> input = new ArrayList<>();

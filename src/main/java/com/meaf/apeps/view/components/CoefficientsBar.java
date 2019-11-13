@@ -9,10 +9,10 @@ import com.vaadin.ui.TextField;
 import org.vaadin.viritin.layouts.MHorizontalLayout;
 
 import javax.validation.constraints.NotNull;
-import java.text.DecimalFormat;
+
+import static com.meaf.apeps.utils.Formatter.format;
 
 public class CoefficientsBar extends MHorizontalLayout {
-  private static DecimalFormat df = new DecimalFormat("#.##");
   private TextField tfAlpha;
   private TextField tfBeta;
   private TextField tfGamma;
@@ -43,7 +43,7 @@ public class CoefficientsBar extends MHorizontalLayout {
   }
 
   public void setAlpha(@NotNull Double alpha) {
-    this.tfAlpha.setValue(df.format(alpha));
+    this.tfAlpha.setValue(format(alpha));
   }
 
   public Double getBeta() {
@@ -51,7 +51,7 @@ public class CoefficientsBar extends MHorizontalLayout {
   }
 
   public void setBeta(@NotNull Double beta) {
-    this.tfBeta.setValue(df.format(beta));
+    this.tfBeta.setValue(format(beta));
   }
 
   public Double getGamma() {
@@ -59,7 +59,7 @@ public class CoefficientsBar extends MHorizontalLayout {
   }
 
   public void setGamma(@NotNull Double gamma) {
-    this.tfGamma.setValue(df.format(gamma));
+    this.tfGamma.setValue(format(gamma));
   }
 
   public Integer getPeriod() {

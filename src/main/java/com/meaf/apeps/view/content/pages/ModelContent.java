@@ -28,17 +28,17 @@ import org.vaadin.viritin.layouts.MVerticalLayout;
 import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.meaf.apeps.utils.Formatter.format;
+
 @Component
 public class ModelContent extends ABaseContent {
 
-  private static DecimalFormat df = new DecimalFormat("#.####");
   private final ModelBean modelBean;
   private final PropertiesBean propertiesBean;
 
@@ -331,10 +331,10 @@ public class ModelContent extends ABaseContent {
 
     Result result = method.getOptimalResult();
 
-    tfMSEPerc.setValue(df.format(result.getMsePerc()));
-    tfRMSE.setValue(df.format(result.getRmse()));
-    tfMSE.setValue(df.format(result.getMse()));
-    tfMAE.setValue(df.format(result.getMae()));
+    tfMSEPerc.setValue(format(result.getMsePerc()));
+    tfRMSE.setValue(format(result.getRmse()));
+    tfMSE.setValue(format(result.getMse()));
+    tfMAE.setValue(format(result.getMae()));
 
     lhCoefficients.setAlpha(result.getAlpha());
     lhCoefficients.setBeta(result.getBeta());
@@ -345,7 +345,7 @@ public class ModelContent extends ABaseContent {
 
   private void updateDataGrid() {
     List<WeatherStateData> dataList = modelBean.getEntries().stream().peek(
-        e -> e.setWindSpeed(Double.parseDouble(df.format(e.getWindSpeed())))
+        e -> e.setWindSpeed(Double.parseDouble(format(e.getWindSpeed())))
     ).collect(Collectors.toList());
 
     this.rowsData = dataList;

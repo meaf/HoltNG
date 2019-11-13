@@ -10,7 +10,7 @@ public class DynamicsRenderer extends HtmlRenderer {
   @Override
   public JsonValue encode(String val) {
     if(val.isEmpty())
-      return super.encode("N/A");
+      return super.encode(" - ");
 
     String[] nums = val.split(" ");
 
@@ -21,11 +21,11 @@ public class DynamicsRenderer extends HtmlRenderer {
     String colorStyle =
       String.format("style=\"color:%s;\"",
         isPositiveChange
-          ? "#77FF77"
-          : "#FF7777"
+          ? "#0f9427"
+          : "#eb4335"
       );
 
-    String value = String.format("<span style=\"pointer-events: none;\">%s <small %s>%s%s</small></span>",
+    String value = String.format("<span style=\"pointer-events: none;\">%s <small %s><b>%s%s</b></small></span>",
       Jsoup.clean(Double.toString(fc), Whitelist.basic()),
       colorStyle,
       isPositiveChange ? "+" : "-",

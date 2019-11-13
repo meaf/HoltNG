@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static com.meaf.apeps.utils.Formatter.format;
+
 @Component
 public class ProjectContent extends ABaseContent {
 
@@ -175,16 +177,16 @@ public class ProjectContent extends ABaseContent {
     grid.setSizeFull();
     grid.addColumn(Model::getName).setCaption("Name").setExpandRatio(2);
 
-    grid.addColumn(m -> m.getLocation().getLatitude() + "/" + m.getLocation().getLongitude()).setCaption("Lat/Lon")
+    grid.addColumn(m -> m.getLocation().getLatitude() + " / " + m.getLocation().getLongitude()).setCaption("Lat/Lon")
         .setExpandRatio(2);
 
     grid.addColumn(Model::getDataAmount).setCaption("Data amount").setExpandRatio(1);
-    grid.addColumn(Model::getSolarForecastCell, new DynamicsRenderer()).setCaption("Forecast(GHI)").setExpandRatio(1);
-    grid.addColumn(Model::getAvgGhi).setCaption("Avg GHI").setExpandRatio(1);
-    grid.addColumn(Model::getMseWind).setCaption("MSE(GHI)").setExpandRatio(1);
-    grid.addColumn(Model::getWindForecastCell, new DynamicsRenderer()).setCaption("Forecast(Wind)").setExpandRatio(1);
-    grid.addColumn(Model::getAvgWindSpeed).setCaption("Avg wind speed").setExpandRatio(1);
-    grid.addColumn(Model::getMseSolar).setCaption("MSE(Wind)").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getSolarForecastCell()), new DynamicsRenderer()).setCaption("Forecast(GHI)").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getAvgGhi())).setCaption("Avg GHI").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getMseWind())).setCaption("MSE(GHI)").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getWindForecastCell()), new DynamicsRenderer()).setCaption("Forecast(Wind)").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getAvgWindSpeed())).setCaption("Avg wind speed").setExpandRatio(1);
+    grid.addColumn(m -> format(m.getMseSolar())).setCaption("MSE(Wind)").setExpandRatio(1);
 
     grid.addSelectionListener(this::selectModel);
 

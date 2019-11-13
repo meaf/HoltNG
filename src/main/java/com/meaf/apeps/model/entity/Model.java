@@ -1,9 +1,13 @@
 package com.meaf.apeps.model.entity;
 
+import com.meaf.apeps.utils.Formatter;
 import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+
+import static com.meaf.apeps.utils.Formatter.format;
 
 @Entity
 @Table(name = "models")
@@ -44,7 +48,7 @@ public class Model extends ABaseEntity {
   private Double ghiLast;
 
   @Formula("(select count(*) from weather_state_data d where d.model_id = id)")
-  private Double dataAmount;
+  private Integer dataAmount;
 
   public String getName() {
     return name;
@@ -130,16 +134,8 @@ public class Model extends ABaseEntity {
     return avgGhi;
   }
 
-  public void setAvgGhi(Double avgGhi) {
-    this.avgGhi = avgGhi;
-  }
-
   public Double getAvgWindSpeed() {
     return avgWindSpeed;
-  }
-
-  public void setAvgWindSpeed(Double avgWindSpeed) {
-    this.avgWindSpeed = avgWindSpeed;
   }
 
   public Double getWindSpeedForecast() {
@@ -158,12 +154,8 @@ public class Model extends ABaseEntity {
     this.ghiForecast = ghiForecast;
   }
 
-  public Double getDataAmount() {
+  public Integer getDataAmount() {
     return dataAmount;
-  }
-
-  public void setDataAmount(Double dataAmount) {
-    this.dataAmount = dataAmount;
   }
 
   public Double getWindSpeedLast() {
@@ -184,12 +176,12 @@ public class Model extends ABaseEntity {
 
   public String getWindForecastCell() {
     return windSpeedForecast == null || windSpeedLast == null
-        ? "" : windSpeedForecast + " " + windSpeedLast;
+        ? "" : format(windSpeedForecast) + " " + format(windSpeedLast);
   }
 
   public String getSolarForecastCell() {
     return ghiForecast == null || ghiLast == null
-        ? "" : ghiForecast + " " + ghiLast;
+        ? "" : format(ghiForecast) + " " + format(ghiLast);
   }
 
 }
