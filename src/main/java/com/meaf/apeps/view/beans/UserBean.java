@@ -33,4 +33,8 @@ public class UserBean {
     byte[] pwBytes = DigestUtils.sha512(Base64.encodeBase64String(uname.getBytes()) + pass);
     return Base64.encodeBase64String(pwBytes);
   }
+
+  public boolean checkUsername(String username) {
+    return userRepository.checkUsername(username) == null;
+  }
 }

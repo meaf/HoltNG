@@ -28,7 +28,7 @@ public class DynamicsRenderer extends HtmlRenderer {
     String value = String.format("<span style=\"pointer-events: none;\">%s <small %s><b>%s%s</b></small></span>",
       Jsoup.clean(Double.toString(fc), Whitelist.basic()),
       colorStyle,
-      isPositiveChange ? "+" : "-",
+      isPositiveChange ? "+" : "",
       Jsoup.clean(Double.toString(dynamics), Whitelist.basic())
     );
 

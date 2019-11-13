@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.meaf.apeps.utils.Formatter.format;
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
 
 @Component
 public class ModelContent extends ABaseContent {
@@ -219,13 +220,16 @@ public class ModelContent extends ABaseContent {
   }
 
   private Button createCalculateButton() {
-    return new Button("Calculate", e -> {
+    Button button = new Button("Calculate");
+    button.setClickShortcut(ENTER);
+    button.addClickListener(e -> {
       try {
         calculate();
       } catch (IllegalArgumentException ex) {
         ex.printStackTrace();
       }
     });
+    return button;
   }
 
   private Button createSaveButton() {

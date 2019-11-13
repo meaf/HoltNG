@@ -18,7 +18,7 @@ public class SessionBean {
   }
 
   public boolean authenticate(LoginForm.LoginEvent e) {
-    User user = userBean.findUser(e.getLoginParameter("username"), e.getLoginParameter("password"));
+    User user = userBean.findUser(e.getLoginParameter("username").toLowerCase(), e.getLoginParameter("password"));
     if (user != null) {
       this.user = user;
       e.getSource().getUI().getPage().reload();
@@ -43,5 +43,9 @@ public class SessionBean {
 
   public void register(User user) {
     userBean.createUser(user);
+  }
+
+  public boolean checkUsernameAvailable(String username) {
+    return userBean.checkUsername(username);
   }
 }

@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static com.meaf.apeps.utils.Formatter.format;
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
 
 @Component
 public class ProjectContent extends ABaseContent {
@@ -98,8 +99,10 @@ public class ProjectContent extends ABaseContent {
   }
 
   private void register(Button.ClickEvent e, User user) {
-    sessionBean.register(user);
-    new LoginPopup(e, sessionBean::authenticate, u -> register(e, u));
+    if(sessionBean.checkUsernameAvailable(user.getName())){
+      sessionBean.register(user);
+      new LoginPopup(e, sessionBean::authenticate, u -> register(e, u));
+    } else EToast.ERROR.show("Error", "this username is already taken");
   }
 
   private Button createLogoutBtn() {
@@ -162,6 +165,7 @@ public class ProjectContent extends ABaseContent {
   private Button createProceedBtn() {
     Button button = new Button("Open model");
     button.setEnabled(false);
+    button.setClickShortcut(ENTER);
     button.addClickListener(e -> openModel());
     return button;
   }

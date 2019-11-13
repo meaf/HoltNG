@@ -8,6 +8,8 @@ import org.vaadin.viritin.layouts.MWindow;
 
 import java.util.function.Consumer;
 
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
+
 public class ProjectCreationPopup extends MWindow {
   public ProjectCreationPopup(Button.ClickEvent e, ProjectBean projectBean, User user, Consumer<Project> updater) {
     MWindow window = new MWindow("Create new project")
@@ -31,6 +33,7 @@ public class ProjectCreationPopup extends MWindow {
     CheckBox cbPrivate = new CheckBox("Make private?");
 
     Button btnSubmit = new Button("Create");
+    btnSubmit.setClickShortcut(ENTER);
     btnSubmit.addClickListener(ev -> {
       Project project = new Project();
       project.setName(tfName.getValue());

@@ -11,6 +11,8 @@ import org.vaadin.viritin.layouts.MWindow;
 
 import java.util.function.Consumer;
 
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
+
 public class UserRegistrationPopup {
   public UserRegistrationPopup(Button.ClickEvent e, Consumer<User> addUser) {
     MWindow window = new MWindow("Registration")
@@ -40,6 +42,7 @@ public class UserRegistrationPopup {
     passConfirm.setWidth(100, Sizeable.Unit.PERCENTAGE);
 
     Button btnSubmit = new Button("Create");
+    btnSubmit.setClickShortcut(ENTER);
     btnSubmit.addClickListener(ev -> {
       if (tfName.getValue().isEmpty() || tfEmail.isEmpty() || pass.getValue().isEmpty() || passConfirm.getValue().isEmpty()) {
         EToast.ERROR.show("Error", "Fill all the fields");

@@ -11,6 +11,8 @@ import org.vaadin.viritin.layouts.MWindow;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static com.vaadin.event.ShortcutAction.KeyCode.ENTER;
+
 public class ModelCreationPopup {
   public ModelCreationPopup(Button.ClickEvent e, List<Location> locations, Consumer<Model> addModel) {
     MWindow window = new MWindow("Create new model")
@@ -42,6 +44,7 @@ public class ModelCreationPopup {
     cbLocations.setWidth(100, Sizeable.Unit.PERCENTAGE);
 
     Button btnSubmit = new Button("Create");
+    btnSubmit.setClickShortcut(ENTER);
     btnSubmit.addClickListener(ev -> {
       if (tfDescr.getValue().isEmpty() || tfDescr.getValue().isEmpty() || cbLocations.getValue() == null) {
         EToast.ERROR.show("Error", "Fill all the fields");
