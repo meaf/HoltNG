@@ -8,17 +8,17 @@ import com.vaadin.ui.Upload;
 
 import java.io.OutputStream;
 import java.sql.Date;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CSVFileReceiver implements Upload.Receiver {
   private static final String header = "PeriodEnd,PeriodStart,Period,CloudOpacity,Dhi,Dni,Ebh,Ghi,WindDirection10m,WindSpeed10m";
   private static final int endLineByte = '\n';
-  IWeatherParser parser = new CSVRowParser();
+  CSVRowParser parser = new CSVRowParser();
   private List<String> rows = new LinkedList<>();
   private java.util.Date filterDate;
+
+
 
 
   @Override
@@ -61,7 +61,7 @@ public class CSVFileReceiver implements Upload.Receiver {
       }
 
       private boolean isIllegalHeader(String row) {
-        if (header.equals(row)) {
+        if (checkHeader(row)) {
           needToCheckHeader = false;
           headerCorrect = true;
           return false;
@@ -77,6 +77,18 @@ public class CSVFileReceiver implements Upload.Receiver {
     };
   }
 
+  private boolean checkHeader(String row) {
+    List<String> headerRows = Arrays.asList(row.split(","));
+    List<String> requiredFields = Arrays.asList("PeriodEnd","CloudOpacity","Dhi","Dni","Ebh","Ghi","WindSpeed10m");
+    for(String fld : requiredFields) {
+      int order = headerRows.indexOf(fld);
+      if(order == -1)
+        return false;
+      parser.addColumn(fld, order);
+    }
+    return true;
+  }
+
   private boolean dateComplies(String row) {
     return -1 < DateUtils.zonedTimeStringToInstant(row.split(",")[0]).compareTo(filterDate);
   }
@@ -86,7 +98,7 @@ public class CSVFileReceiver implements Upload.Receiver {
   }
 
   public List<WeatherStateData> parseRows() {
-    return parser.parse(rows.stream().collect(Collectors.joining("\n")));
+    return parser.parse(String.join("\n", rows));
   }
 
 

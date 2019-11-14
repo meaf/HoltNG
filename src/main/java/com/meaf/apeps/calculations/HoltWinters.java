@@ -78,6 +78,8 @@ public class HoltWinters {
         }
       }
     }
+
+    forecast(optimalA, optimalB, optimalC, period, forecastLen);
     optimalResult = new Result(optimalA, optimalB, optimalC, optimalMAE, optimalMSE, optimalMSEPerc);
   }
 

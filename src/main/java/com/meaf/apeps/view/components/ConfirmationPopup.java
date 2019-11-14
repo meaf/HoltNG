@@ -19,7 +19,7 @@ public class ConfirmationPopup {
         .withDraggable(false)
         .withResizable(false)
         .withClosable(true)
-        .withHeight(150, Sizeable.Unit.PIXELS)
+        .withHeight(100, Sizeable.Unit.PIXELS)
         .withWidth(300, Sizeable.Unit.PIXELS);
 
     Button btnOk = createOkButton(c, window);

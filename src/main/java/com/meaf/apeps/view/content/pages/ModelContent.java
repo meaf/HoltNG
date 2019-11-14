@@ -17,6 +17,7 @@ import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.*;
 import com.vaadin.data.HasValue;
 import com.vaadin.server.Sizeable;
+import com.vaadin.server.UserError;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
 import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapMarker;
@@ -65,7 +66,7 @@ public class ModelContent extends ABaseContent {
   private Button btnCalculate;
   private Button btnSaveResults;
   private List<WeatherStateData> rowsData;
-
+  private ModelChart modelChart;
   public ModelContent(ModelBean modelBean, PropertiesBean propertiesBean, SessionBean sessionBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
     this.propertiesBean = propertiesBean;
@@ -185,8 +186,11 @@ public class ModelContent extends ABaseContent {
       else lhCoefficients.resetGamma();
     }
 
-    if(lhCoefficients.check())
+    if(lhCoefficients.isFilled() && lhCoefficients.check()) {
       calculate();
+    } else {
+      clearChart();
+    }
   }
 
   private Button createGridPropertiesButton() {
@@ -212,7 +216,7 @@ public class ModelContent extends ABaseContent {
 
     MHorizontalLayout buttons = new MHorizontalLayout();
 
-    buttons.add(createUploadButton(), createUpdateButton(window));
+    buttons.add(createUploadButton(grid), createUpdateButton(window, grid));
     buttons.add(createDeleteButton(grid), createDeleteAllButton(grid));
 
     MVerticalLayout layout = new MVerticalLayout(
@@ -233,6 +237,10 @@ public class ModelContent extends ABaseContent {
     Button button = new Button("Delete");
     button.setClickShortcut(DELETE);
     button.addClickListener(e -> new ConfirmationPopup(e, "Delete selected rows?", d -> {
+      if(grid.getSelectedItems().size() == 0){
+        EToast.ERROR.show("", "Select an item");
+      }
+
       deleteRows(grid.getSelectedItems());
       updateDataGrid(entriesGrid);
       updateDataGrid(grid);
@@ -242,6 +250,7 @@ public class ModelContent extends ABaseContent {
 
   private Button createDeleteAllButton(MGrid<WeatherStateData> grid) {
     Button button = new Button("Delete All");
+    button.setStyleName("danger");
     button.addClickListener(e -> new ConfirmationPopup(e, "Delete all rows?", d -> {
       deleteRows(rowsData);
       updateDataGrid(entriesGrid);
@@ -279,7 +288,7 @@ public class ModelContent extends ABaseContent {
     return btnClear;
   }
 
-  private Button createUpdateButton(MWindow parentWindow) {
+  private Button createUpdateButton(MWindow parentWindow, MGrid<WeatherStateData> grid) {
     Button updButton = new Button("Update");
     updButton.addClickListener(e -> {
       List<WeatherStateData> weatherStateDataList = returnOnlyMissingValues(requestHttpUpdate.requestUpdate(modelBean.getModel().getLocation().getId()));
@@ -287,10 +296,8 @@ public class ModelContent extends ABaseContent {
         EToast.ERROR.show("Http update error", "could not communicate to data sever \nCheck if API keys are correct");
         return;
       }
-      if (weatherStateDataList.isEmpty())
-        EToast.SUCCESS.show("Everything is up-to-date", "nothing to update");
+      createNewDataWindow(grid, parentWindow, weatherStateDataList, false);
 
-      createNewDataWindow(parentWindow, weatherStateDataList, false);
     });
 
     return updButton;
@@ -306,7 +313,7 @@ public class ModelContent extends ABaseContent {
     return entries.stream().noneMatch(e -> e.asDayUnit().equals(stateData.asDayUnit()));
   }
 
-  private Upload createUploadButton() {
+  private Upload createUploadButton(MGrid<WeatherStateData> grid) {
     CSVFileReceiver fileReceiver = new CSVFileReceiver();
 
     fileReceiver.setDateScope(DateUtils.asSqlDate(new Date(107, Calendar.JANUARY, 2))); //TODO
@@ -318,8 +325,12 @@ public class ModelContent extends ABaseContent {
     UploadInfoWindow uploadInfoWindow = new UploadInfoWindow(uploadBtn, fileReceiver);
 
     uploadBtn.addStartedListener(event -> {
-      if ("".equals(event.getFilename()) || event.getContentLength() == 0)
+      if ("".equals(event.getFilename()) || event.getContentLength() == 0) {
+        EToast.ERROR.show("", "Select a file first");
         return;
+      }
+      uploadBtn.setComponentError(null);
+
       fileReceiver.reset();
       if (uploadInfoWindow.getParent() == null) {
         UI.getCurrent().addWindow(uploadInfoWindow);
@@ -328,7 +339,7 @@ public class ModelContent extends ABaseContent {
     });
     uploadBtn.addFinishedListener(event -> {
       uploadInfoWindow.setClosable(true);
-      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(uploadInfoWindow, returnOnlyMissingValues(uploadInfoWindow.getResults()), true));
+      uploadInfoWindow.setShowResultsAction(e -> createNewDataWindow(grid, uploadInfoWindow, returnOnlyMissingValues(uploadInfoWindow.getResults()), true));
     });
     return uploadBtn;
   }
@@ -354,7 +365,7 @@ public class ModelContent extends ABaseContent {
         EToast.ERROR.show("Error", "Can save only monthly model");
         return;
       }
-      new ConfirmationPopup(e, "Apply parameters to model", c -> {
+      new ConfirmationPopup(e, "Apply parameters to model?", c -> {
         try {
           calculate();
           saveModel();
@@ -391,13 +402,20 @@ public class ModelContent extends ABaseContent {
     EToast.SUCCESS.show("Success", "Model params are saved");
   }
 
-  private void createNewDataWindow(com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
+  private void createNewDataWindow(MGrid<WeatherStateData> mgmtGrid, com.vaadin.ui.Component src, List<WeatherStateData> data, boolean displayWindColumn) {
+    if(src.getUI().getWindows().stream().anyMatch(w -> "New Data".equals(w.getCaption())))
+      return;
+    if(data.isEmpty()) {
+      EToast.SUCCESS.show("Everything is up-to-date", "nothing to update");
+      return;
+    }
     MWindow window = new MWindow("New Data")
         .withCenter()
         .withModal(true)
         .withClosable(true)
         .withHeight(60, Sizeable.Unit.PERCENTAGE)
         .withWidth(60, Sizeable.Unit.PERCENTAGE);
+
 
     MGrid<WeatherStateData> grid = getDetailedGridBase();
 
@@ -414,6 +432,7 @@ public class ModelContent extends ABaseContent {
       modelBean.mergeEntries(data);
       EToast.SUCCESS.show("Merged", data.size() + " entries were added to model");
       updateDataGrid(entriesGrid);
+      updateDataGrid(mgmtGrid);
       window.close();
     });
 
@@ -486,9 +505,16 @@ public class ModelContent extends ABaseContent {
 
   private void redrawChart() {
     this.chartWrapper.removeAllComponents();
-    ModelChart components = new ModelChart(method);
-    components.setSizeFull();
-    this.chartWrapper.add(components).setSizeFull();
+    modelChart = new ModelChart(method);
+    modelChart.setSizeFull();
+    this.chartWrapper.add(modelChart).setSizeFull();
+  }
+
+  private void clearChart() {
+    this.chartWrapper.removeAllComponents();
+    modelChart = new ModelChart(null);
+    modelChart.setSizeFull();
+    this.chartWrapper.add(modelChart).setSizeFull();
   }
 
   private void toProjects(Button.ClickEvent e) {
