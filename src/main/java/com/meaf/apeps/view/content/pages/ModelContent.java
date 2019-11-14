@@ -12,6 +12,7 @@ import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.PropertiesBean;
+import com.meaf.apeps.view.beans.SessionBean;
 import com.meaf.apeps.view.beans.StateBean;
 import com.meaf.apeps.view.components.*;
 import com.vaadin.data.HasValue;
@@ -44,6 +45,7 @@ public class ModelContent extends ABaseContent {
 
   private final ModelBean modelBean;
   private final PropertiesBean propertiesBean;
+  private final SessionBean sessionBean;
 
   private final RequestHttpUpdate requestHttpUpdate;
   private HoltWinters method;
@@ -64,9 +66,10 @@ public class ModelContent extends ABaseContent {
   private Button btnSaveResults;
   private List<WeatherStateData> rowsData;
 
-  public ModelContent(ModelBean modelBean, PropertiesBean propertiesBean, RequestHttpUpdate requestHttpUpdate) {
+  public ModelContent(ModelBean modelBean, PropertiesBean propertiesBean, SessionBean sessionBean, RequestHttpUpdate requestHttpUpdate) {
     this.modelBean = modelBean;
     this.propertiesBean = propertiesBean;
+    this.sessionBean = sessionBean;
     this.requestHttpUpdate = requestHttpUpdate;
   }
 
@@ -96,13 +99,11 @@ public class ModelContent extends ABaseContent {
 
     Button btnReturnToProject = new Button("Return");
     btnReturnToProject.setClickShortcut(ESCAPE);
-    btnReturnToProject.setWidth(100, Sizeable.Unit.PERCENTAGE);
     btnReturnToProject.addClickListener(this::toProjects);
 
     cxSolarStats.addValueChangeListener(this::toggleModelType);
 
-    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly), btnReturnToProject);
-    hlBottomBar.setComponentAlignment(btnReturnToProject, Alignment.MIDDLE_CENTER);
+    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
     hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
@@ -136,8 +137,13 @@ public class ModelContent extends ABaseContent {
     data.setExpandRatio(calculations, 7);
 
     DisclosurePanel aboutBox = new DisclosurePanel(modelBean.getModel().getName(), new RichText(modelBean.getModel().getDescription()), getMap());
+    MHorizontalLayout sessionBarAdditional = new MHorizontalLayout(btnReturnToProject, aboutBox);
+    sessionBarAdditional.setDefaultComponentAlignment(Alignment.TOP_LEFT);
+    sessionBarAdditional.expand(aboutBox);
+
+
     MVerticalLayout content = new MVerticalLayout(
-        aboutBox,
+        new SessionInfoBar(sessionBean, sessionBarAdditional),
         data
     );
     updateDataGrid(entriesGrid);

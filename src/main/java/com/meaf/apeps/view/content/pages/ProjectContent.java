@@ -3,7 +3,6 @@ package com.meaf.apeps.view.content.pages;
 import com.meaf.apeps.model.entity.Location;
 import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.Project;
-import com.meaf.apeps.model.entity.User;
 import com.meaf.apeps.view.beans.*;
 import com.meaf.apeps.view.components.*;
 import com.vaadin.data.HasValue;
@@ -12,6 +11,7 @@ import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.tapio.googlemaps.GoogleMap;
 import com.vaadin.tapio.googlemaps.client.LatLon;
 import com.vaadin.tapio.googlemaps.client.overlays.GoogleMapMarker;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
@@ -60,21 +60,26 @@ public class ProjectContent extends ABaseContent {
     cbProjects = createProjectsComboBox();
     googleMap = createMap();
     modelGrid = createModelGrid();
-    Button sessionButton = sessionBean.isUserLoggedIn()
-        ? createLogoutBtn()
-        : createLoginBtn();
+
     btnProceed = createProceedBtn();
     Button btnNewProject = createNewProjectBtn();
     Button btnNewModel = createNewModelBtn();
     Button btnNewLocation = createNewLocationBtn();
 
     MHorizontalLayout buttons = new MHorizontalLayout();
-    buttons.add(sessionButton, btnProceed, btnNewProject, btnNewModel, btnNewLocation);
+    MHorizontalLayout filler = new MHorizontalLayout();
+    buttons.add(btnProceed, btnNewProject, btnNewModel, btnNewLocation, filler);
+    buttons.setExpandRatio(filler, 1);
+    buttons.setDefaultComponentAlignment(Alignment.MIDDLE_LEFT);
 
+    SessionInfoBar infoBar = new SessionInfoBar(sessionBean, buttons);
+
+    layout.add(infoBar);
     layout.add(cbProjects);
     layout.add(googleMap);
     layout.add(modelGrid);
-    layout.add(buttons);
+    layout.setComponentAlignment(infoBar, Alignment.MIDDLE_RIGHT);
+    layout.setSizeFull();
 
     fill();
 
@@ -92,26 +97,6 @@ public class ProjectContent extends ABaseContent {
       fillMap();
       fillModels(true);
     }
-  }
-
-  private Button createLoginBtn() {
-    Button btnLogin = new Button("Login");
-    btnLogin.addClickListener(e -> new LoginPopup(e, sessionBean::authenticate, u -> register(e, u)));
-    return btnLogin;
-  }
-
-  private void register(Button.ClickEvent e, User user) {
-    if(sessionBean.checkUsernameAvailable(user.getName())){
-      sessionBean.register(user);
-      new LoginPopup(e, sessionBean::authenticate, u -> register(e, u));
-    } else EToast.ERROR.show("Error", "this username is already taken");
-  }
-
-  private Button createLogoutBtn() {
-    Button btnLogin = new Button("Logout");
-    btnLogin.addClickListener(e -> sessionBean.logout(e));
-
-    return btnLogin;
   }
 
   private Button createNewProjectBtn() {
