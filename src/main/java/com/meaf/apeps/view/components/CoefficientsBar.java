@@ -175,4 +175,14 @@ public class CoefficientsBar extends MHorizontalLayout {
         && tfBeta.getErrorMessage() == null
         && tfGamma.getErrorMessage() == null;
   }
+
+  public void resetAlpha() {
+    tfAlpha.clear();
+  }
+  public void resetBeta() {
+    tfBeta.clear();
+  }
+  public void resetGamma() {
+    tfGamma.clear();
+  }
 }

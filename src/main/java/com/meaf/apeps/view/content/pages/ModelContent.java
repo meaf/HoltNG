@@ -157,20 +157,26 @@ public class ModelContent extends ABaseContent {
     boolean isSolar = e.getValue();
     Model model = modelBean.getModel();
 
-    if(isSolar){
-      if(model.getAlpha_s() != null)
+    if (isSolar) {
+      if (model.getAlpha_s() != null)
         lhCoefficients.setAlpha(model.getAlpha_s().doubleValue());
-      if(model.getBeta_s() != null)
+      else lhCoefficients.resetAlpha();
+      if (model.getBeta_s() != null)
         lhCoefficients.setBeta(model.getBeta_s().doubleValue());
-      if(model.getGamma_s() != null)
+      else lhCoefficients.resetBeta();
+      if (model.getGamma_s() != null)
         lhCoefficients.setGamma(model.getGamma_s().doubleValue());
+      else lhCoefficients.resetGamma();
     } else {
       if (model.getAlpha_w() != null)
         lhCoefficients.setAlpha(model.getAlpha_w().doubleValue());
+      else lhCoefficients.resetAlpha();
       if (model.getBeta_w() != null)
         lhCoefficients.setBeta(model.getBeta_w().doubleValue());
+      else lhCoefficients.resetBeta();
       if (model.getGamma_w() != null)
         lhCoefficients.setGamma(model.getGamma_w().doubleValue());
+      else lhCoefficients.resetGamma();
     }
 
     if(lhCoefficients.check())
@@ -336,7 +342,12 @@ public class ModelContent extends ABaseContent {
   }
 
   private Button createSaveButton() {
+
     return new Button("Save results", e -> {
+      if (method.getDateInterval() != HoltWinters.EDateInterval.MONTHLY) {
+        EToast.ERROR.show("Error", "Can save only monthly model");
+        return;
+      }
       new ConfirmationPopup(e, "Apply parameters to model", c -> {
         try {
           calculate();
