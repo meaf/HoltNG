@@ -10,6 +10,7 @@ import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
+import com.meaf.apeps.utils.Formatter;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.PropertiesBean;
 import com.meaf.apeps.view.beans.SessionBean;
@@ -32,6 +33,9 @@ import org.vaadin.viritin.layouts.MVerticalLayout;
 import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -48,6 +52,7 @@ public class ModelContent extends ABaseContent {
   private final PropertiesBean propertiesBean;
   private final SessionBean sessionBean;
 
+  private static final SimpleDateFormat sdf = new SimpleDateFormat("MM/yyyy");
   private final RequestHttpUpdate requestHttpUpdate;
   private HoltWinters method;
   private MGrid<WeatherStateData> entriesGrid = new MGrid<>(WeatherStateData.class)
@@ -60,6 +65,7 @@ public class ModelContent extends ABaseContent {
   private TextField tfRMSE = new TextField();
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
+  private TextField tfTestDate = new TextField();
   private MHorizontalLayout chartWrapper = new MHorizontalLayout();
   private MCheckBox cxSolarStats = new MCheckBox("Solar energy", true);
   private MCheckBox cxGroupMonthly = new MCheckBox("Group monthly", true);
@@ -98,13 +104,15 @@ public class ModelContent extends ABaseContent {
     tfMSEPerc.setCaption("MSE, %");
     tfMSEPerc.setEnabled(false);
 
+    tfTestDate = createTestDateField();
+
     Button btnReturnToProject = new Button("Return");
     btnReturnToProject.setClickShortcut(ESCAPE);
     btnReturnToProject.addClickListener(this::toProjects);
 
     cxSolarStats.addValueChangeListener(this::toggleModelType);
 
-    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
+    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, tfTestDate, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
     hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
@@ -158,6 +166,11 @@ public class ModelContent extends ABaseContent {
     }
 
     return content;
+  }
+
+  private TextField createTestDateField() {
+    TextField tf = new TextField("Limit model");
+    return tf;
   }
 
   private void toggleModelType(HasValue.ValueChangeEvent<Boolean> e) {
@@ -385,17 +398,19 @@ public class ModelContent extends ABaseContent {
     if (method.getTargetType() == ETargetValues.SOLAR) {
       modelBean.getModel().setGhiForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseSolar(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
-      modelBean.getModel().setGhiLast(method.getLastActualData());
+      modelBean.getModel().setGhiLast(method.getLastActualData().asDouble());
       modelBean.getModel().setAlpha_s(new BigDecimal(lhCoefficients.getAlpha()));
       modelBean.getModel().setBeta_s(new BigDecimal(lhCoefficients.getBeta()));
       modelBean.getModel().setGamma_s(new BigDecimal(lhCoefficients.getGamma()));
+      modelBean.getModel().setDate_s(DateUtils.asSqlDate(method.getLastActualData().getDate()));
     } else {
       modelBean.getModel().setWindSpeedForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseWind(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
-      modelBean.getModel().setWindSpeedLast(method.getLastActualData());
+      modelBean.getModel().setWindSpeedLast(method.getLastActualData().asDouble());
       modelBean.getModel().setAlpha_w(new BigDecimal(lhCoefficients.getAlpha()));
       modelBean.getModel().setBeta_w(new BigDecimal(lhCoefficients.getBeta()));
       modelBean.getModel().setGamma_w(new BigDecimal(lhCoefficients.getGamma()));
+      modelBean.getModel().setDate_w(DateUtils.asSqlDate(method.getLastActualData().getDate()));
     }
     modelBean.saveCurrentModel();
 
@@ -455,6 +470,7 @@ public class ModelContent extends ABaseContent {
     if (rowsData.isEmpty()) {
       throw new IllegalArgumentException();
     }
+    Date filterDate = getFilterDate();
     List<WeatherStateData> dataList = cxGroupMonthly.getValue()
         ? WeatherAggregator.dailyToMonthy(rowsData)
         : rowsData;
@@ -462,6 +478,7 @@ public class ModelContent extends ABaseContent {
     method = new HoltWinters();
     method.setTargetType(cxSolarStats.getValue() ? ETargetValues.SOLAR : ETargetValues.WIND);
     method.setDateInterval(cxGroupMonthly.getValue() ? HoltWinters.EDateInterval.MONTHLY : HoltWinters.EDateInterval.DAILY);
+    method.setFilterDate(filterDate);
 
     if (dataList.isEmpty() || dataList.size() < lhCoefficients.getPeriod()) {
       EToast.ERROR.show("Error", "not enough data to build the model, consider uploading new stats or select smaller period");
@@ -486,6 +503,40 @@ public class ModelContent extends ABaseContent {
     lhCoefficients.setGamma(result.getGamma());
 
     redrawChart();
+  }
+
+  private Date getFilterDate() {
+    String dateValue = tfTestDate.getValue();
+    if(dateValue.isEmpty())
+      return new Date();
+    try {
+      if(!validateDate(dateValue)){
+        tfTestDate.setComponentError(new UserError("Date should be in format MM/yyyy, in the past"));
+        return new Date();
+      }
+      Date filterDate = sdf.parse(dateValue);
+      tfTestDate.setComponentError(null);
+      return filterDate;
+    } catch (ParseException e) {
+      tfTestDate.setComponentError(new UserError("Date should be in format MM/yyyy, in the past"));
+      return new Date();
+    }
+  }
+
+  private boolean validateDate(String filterDate) {
+    String[] split = filterDate.split("/");
+    if(split.length != 2) {
+      return false;
+    }
+    int month = Integer.parseInt(split[0]);
+    if(month > 12 || month < 1) {
+      return false;
+    }
+    int year =  Integer.parseInt(split[1]);
+    if(year > 2020 || year < 1970) {
+      return false;
+    }
+    return true;
   }
 
   private void updateDataGrid(MGrid<WeatherStateData> grid) {

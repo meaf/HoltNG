@@ -4,13 +4,16 @@ import com.meaf.apeps.calculations.HoltWinters;
 import com.meaf.apeps.utils.DatedValue;
 import com.meaf.apeps.utils.ETargetValues;
 import com.vaadin.addon.charts.Chart;
+import com.vaadin.addon.charts.PointClickEvent;
 import com.vaadin.addon.charts.examples.AbstractVaadinChartExample;
 import com.vaadin.addon.charts.model.*;
 import com.vaadin.ui.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ModelChart extends AbstractVaadinChartExample {
 
@@ -18,6 +21,7 @@ public class ModelChart extends AbstractVaadinChartExample {
   private List<DatedValue> input = new ArrayList<>();
   private List<DatedValue> smoothed = new ArrayList<>();
   private List<DatedValue> model = new ArrayList<>();
+  private Consumer<Date> click;
 
   public ModelChart(HoltWinters method) {
     super();
@@ -29,9 +33,13 @@ public class ModelChart extends AbstractVaadinChartExample {
     this.targetType = method.getTargetType();
   }
 
+  public void setClickDateEvent(Consumer<Date> consumer){
+    this.click = consumer;
+  }
+
   @Override
   public String getDescription() {
-    return "Basic Line With Data Labels";
+    return "Holt-Winters model";
   }
 
   @Override
@@ -89,7 +97,15 @@ public class ModelChart extends AbstractVaadinChartExample {
     configuration.addSeries(model);
 
     chart.drawChart(configuration);
+
+    chart.addPointClickListener(this::clickEvent);
     return chart;
+  }
+
+  private void clickEvent(PointClickEvent e) {
+    System.out.println(e);
+    if(click != null)
+      click.accept(new Date());
   }
 
   private void fillDataSeries(List<DatedValue> srcList, DataSeries ds) {

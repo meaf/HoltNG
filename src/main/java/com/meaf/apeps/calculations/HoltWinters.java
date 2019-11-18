@@ -7,6 +7,7 @@ import com.meaf.apeps.utils.ETargetValues;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ public class HoltWinters {
   private double mseAvg = -1;  //среднеквадратическая ошибка модели
   private double maeAvg = -1;  //средняя абсолютная ошибка модели
   private EDateInterval dateInterval;
+  private Date filterDate;
 
   public ETargetValues getTargetType() {
     return targetType;
@@ -119,29 +121,31 @@ public class HoltWinters {
                         int forecastLen) {
 
     S = inputData;
-    initValues(forecastLen);
+    int sliceSize = (int)inputData.stream().map(DatedValue::getDate).filter(filterDate::after).count();
 
-    for (int i = 1; i < S.size(); i++)
-      calculateStep(alpha, beta, gamma, period, i);
+    initValues(forecastLen, sliceSize);
 
-    for (int i = S.size(); i < S.size() + forecastLen; i++)
-      calculateForecastStep(period, i);
+    for (int i = 1; i < sliceSize; i++)
+      calculateStep(alpha, beta, gamma, period, i, sliceSize);
 
-    calculateError();
+    for (int i = sliceSize; i < sliceSize + forecastLen; i++)
+      calculateForecastStep(period, i, sliceSize);
+
+    calculateError(sliceSize);
   }
 
-  private void initValues(int forecastLen) {
-    int resultedLen = S.size() + forecastLen;
+  private void initValues(int forecastLen, int sliceSize) {
+    int resultedLen = sliceSize + forecastLen;
     Fc = new ArrayList<>(forecastLen);
 
-    Lt = new ArrayList<>(S.size());
-    Tt = new ArrayList<>(S.size());
-    Sts = new ArrayList<>(S.size());
-    Err = new ArrayList<>(S.size());
-    FcEstimated = new ArrayList<>(S.size());
-    ErrorPerc = new ArrayList<>(S.size());
-    ErrorMSE = new ArrayList<>(S.size());
-    ErrorMAE = new ArrayList<>(S.size());
+    Lt = new ArrayList<>(sliceSize);
+    Tt = new ArrayList<>(sliceSize);
+    Sts = new ArrayList<>(sliceSize);
+    Err = new ArrayList<>(sliceSize);
+    FcEstimated = new ArrayList<>(sliceSize);
+    ErrorPerc = new ArrayList<>(sliceSize);
+    ErrorMSE = new ArrayList<>(sliceSize);
+    ErrorMAE = new ArrayList<>(sliceSize);
 
 
     Lt.add(0, S.get(0));
@@ -155,7 +159,7 @@ public class HoltWinters {
     ErrorMSE.add(0, new DatedValue(S.get(0).getDate(), 0));
   }
 
-  private void calculateStep(double alpha, double beta, double gamma, int period, int i) {
+  private void calculateStep(double alpha, double beta, double gamma, int period, int i, int sliceSize) {
     Date date = S.get(i).getDate();
 
     Lt.add(i, new DatedValue(date, alpha * S.get(i).asDouble() / getSeasonalK(i, period) + ((1 - alpha) * (Lt.get(i - 1).asDouble() + Tt.get(i - 1).asDouble()))));
@@ -171,9 +175,9 @@ public class HoltWinters {
     ErrorPerc.add(i, new DatedValue(date, ErrorMSE.get(i).asDouble() / (S.get(i).asDouble() * S.get(i).asDouble())));
   }
 
-  private void calculateForecastStep(int period, int i) {
-    int lastSequenceValueInd = S.size() - 1;
-    int fcPointNumber = i - S.size() + 1;
+  private void calculateForecastStep(int period, int i, int sliceSize) {
+    int lastSequenceValueInd = sliceSize - 1;
+    int fcPointNumber = i - sliceSize + 1;
     Date lastDate = S.get(lastSequenceValueInd).getDate();
     LocalDate now = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(fcPointNumber);
 
@@ -184,10 +188,10 @@ public class HoltWinters {
     return i < period ? 1 : Sts.get(i - period).asDouble();
   }
 
-  private void calculateError() {
-    this.maeAvg = ErrorMAE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
-    this.mseAvg = ErrorMSE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
-    this.msePerc = ErrorPerc.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / S.size();
+  private void calculateError(int sliceSize) {
+    this.maeAvg = ErrorMAE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / sliceSize;
+    this.mseAvg = ErrorMSE.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / sliceSize;
+    this.msePerc = ErrorPerc.stream().map(DatedValue::asDouble).reduce(Double::sum).orElse(-1d) / sliceSize;
   }
 
   public EDateInterval getDateInterval() {
@@ -198,8 +202,19 @@ public class HoltWinters {
     this.dateInterval = dateInterval;
   }
 
-  public Double getLastActualData() {
-    return S.get(S.size() - 1).asDouble();
+  public DatedValue getLastActualData() {
+    return S.stream()
+        .filter(s -> s.getDate().before(filterDate))
+        .max(Comparator.comparing(DatedValue::getDate))
+        .orElse(null);
+  }
+
+  public void setFilterDate(Date filterDate) {
+    this.filterDate = filterDate;
+  }
+
+  public Date getFilterDate() {
+    return filterDate;
   }
 
   public enum EDateInterval {

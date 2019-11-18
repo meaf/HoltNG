@@ -5,6 +5,7 @@ import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.text.DecimalFormat;
 
 import static com.meaf.apeps.utils.Formatter.format;
@@ -48,6 +49,10 @@ public class Model extends ABaseEntity {
   private Double windSpeedForecast;
   @Column
   private Double ghiForecast;
+  @Column
+  private Date date_s;
+  @Column
+  private Date date_w;
   @Column
   private Double windSpeedLast;
   @Column
@@ -202,6 +207,22 @@ public class Model extends ABaseEntity {
 
   public void setGhiLast(Double ghiLast) {
     this.ghiLast = ghiLast;
+  }
+
+  public Date getDate_s() {
+    return date_s;
+  }
+
+  public void setDate_s(Date date_s) {
+    this.date_s = date_s;
+  }
+
+  public Date getDate_w() {
+    return date_w;
+  }
+
+  public void setDate_w(Date date_w) {
+    this.date_w = date_w;
   }
 
   public String getWindForecastCell() {
