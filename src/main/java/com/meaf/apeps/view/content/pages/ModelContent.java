@@ -10,7 +10,6 @@ import com.meaf.apeps.model.entity.Model;
 import com.meaf.apeps.model.entity.WeatherStateData;
 import com.meaf.apeps.utils.DateUtils;
 import com.meaf.apeps.utils.ETargetValues;
-import com.meaf.apeps.utils.Formatter;
 import com.meaf.apeps.view.beans.ModelBean;
 import com.meaf.apeps.view.beans.PropertiesBean;
 import com.meaf.apeps.view.beans.SessionBean;
@@ -33,7 +32,6 @@ import org.vaadin.viritin.layouts.MVerticalLayout;
 import org.vaadin.viritin.layouts.MWindow;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -62,7 +60,7 @@ public class ModelContent extends ABaseContent {
       .withHeight(100, Sizeable.Unit.PERCENTAGE);
   private CoefficientsBar lhCoefficients;
   private TextField tfMSEPerc = new TextField();
-  private TextField tfRMSE = new TextField();
+  private TextField tfAccuracy = new TextField();
   private TextField tfMSE = new TextField();
   private TextField tfMAE = new TextField();
   private TextField tfTestDate = new TextField();
@@ -94,8 +92,8 @@ public class ModelContent extends ABaseContent {
     tfMSE.setCaption("MSE");
     tfMSE.setEnabled(false);
 
-    tfRMSE.setCaption("RMSE");
-    tfRMSE.setEnabled(false);
+    tfAccuracy.setCaption("Accuracy(%)");
+    tfAccuracy.setEnabled(false);
 
     tfMAE.setPlaceholder("Press calculate");
     tfMAE.setCaption("MAE");
@@ -112,7 +110,7 @@ public class ModelContent extends ABaseContent {
 
     cxSolarStats.addValueChangeListener(this::toggleModelType);
 
-    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfRMSE, tfTestDate, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
+    MHorizontalLayout hlBottomBar = new MHorizontalLayout(tfMAE, tfMSEPerc, tfMSE, tfAccuracy, tfTestDate, new MVerticalLayout(cxSolarStats, cxGroupMonthly));
     hlBottomBar.setCaption("Average node MSE");
 
     ModelChart lineChart = new ModelChart(method);
@@ -494,7 +492,7 @@ public class ModelContent extends ABaseContent {
     Result result = method.getOptimalResult();
 
     tfMSEPerc.setValue(format(result.getMsePerc()));
-    tfRMSE.setValue(format(result.getRmse()));
+    tfAccuracy.setValue(format(result.getOptimalFitMAE()));
     tfMSE.setValue(format(result.getMse()));
     tfMAE.setValue(format(result.getMae()));
 
@@ -573,7 +571,7 @@ public class ModelContent extends ABaseContent {
     tfMSE.clear();
     tfMSEPerc.clear();
     tfMAE.clear();
-    tfRMSE.clear();
+    tfAccuracy.clear();
     changeState(StateBean.EState.Project);
   }
 

@@ -6,10 +6,7 @@ import com.meaf.apeps.utils.ETargetValues;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
@@ -17,6 +14,7 @@ public class HoltWinters {
 
   private ETargetValues targetType;
   private Result optimalResult;
+  private List<Double> forecastFitness = new LinkedList<>();
   private List<DatedValue> inputData,
       S,  // заданные значения
       Lt, //экспоненциально сглаженный ряд
@@ -31,6 +29,7 @@ public class HoltWinters {
   private double msePerc = -1; //среднеквадратическая ошибка модели(%)
   private double mseAvg = -1;  //среднеквадратическая ошибка модели
   private double maeAvg = -1;  //средняя абсолютная ошибка модели
+  private double forecastFitnessAvg = -1;
   private EDateInterval dateInterval;
   private Date filterDate;
 
@@ -63,26 +62,49 @@ public class HoltWinters {
     double optimalMSE = Double.MAX_VALUE;
     double optimalMAE = Double.MAX_VALUE;
     double optimalMSEPerc = Double.MAX_VALUE;
+    double optimalFitMSE = Double.MAX_VALUE;
+    Date filterSavedDate = filterDate;
+
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTime(inputData.get(0).getDate());
+    calendar.add(Calendar.YEAR, 3);
+    final Date minLimitDate = calendar.getTime();
+    final Date lastDate = inputData.get(inputData.size() - 1).getDate();
 
     for (double a = aLowerLimit; a <= aUpperLimit; a += step) {
       for (double b = bLowerLimit; b <= bUpperLimit; b += step) {
         for (double c = cLowerLimit; c <= cUpperLimit; c += step) {
-          forecast(a, b, c, period, forecastLen);
-          double newMSE = mseAvg;
-          if (optimalMSE > newMSE) {
+          forecastFitness = new LinkedList<>();
+          calendar.setTime(lastDate);
+          filterDate = lastDate;
+          while(minLimitDate.before(filterDate)) {
+            calendar.add(Calendar.YEAR, -1);
+            filterDate = calendar.getTime();
+            forecast(a, b, c, period, period);
+          }
+          calculateFitnessMSE();
+          double newFitMSE = forecastFitnessAvg;
+//            double newMSE = mseAvg;
+          if (optimalFitMSE > newFitMSE) {
             optimalA = a;
             optimalB = b;
             optimalC = c;
             optimalMAE = maeAvg;
             optimalMSE = mseAvg;
             optimalMSEPerc = msePerc;
+            optimalFitMSE = newFitMSE;
           }
         }
       }
     }
 
+    filterDate = filterSavedDate;
     forecast(optimalA, optimalB, optimalC, period, forecastLen);
-    optimalResult = new Result(optimalA, optimalB, optimalC, optimalMAE, optimalMSE, optimalMSEPerc);
+    optimalResult = new Result(optimalA, optimalB, optimalC, optimalMAE, optimalMSE, optimalMSEPerc, optimalFitMSE);
+  }
+
+  private void calculateFitnessMSE() {
+    forecastFitnessAvg = forecastFitness.stream().reduce(Double::sum).orElse(1d)/forecastFitness.size();
   }
 
   public double[] extractData(List<WeatherStateData> stats) {
@@ -183,9 +205,16 @@ public class HoltWinters {
     int lastSequenceValueInd = sliceSize - 1;
     int fcPointNumber = i - sliceSize + 1;
     Date lastDate = S.get(lastSequenceValueInd).getDate();
-    LocalDate now = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(fcPointNumber);
+    LocalDate date = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(fcPointNumber);
 
-    Fc.add(fcPointNumber - 1, new DatedValue(now, (Lt.get(lastSequenceValueInd).asDouble() + Tt.get(lastSequenceValueInd).asDouble() * fcPointNumber) * Sts.get(i - period).asDouble()));
+
+    DatedValue forecast = new DatedValue(date, (Lt.get(lastSequenceValueInd).asDouble() + Tt.get(lastSequenceValueInd).asDouble() * fcPointNumber) * Sts.get(i - period).asDouble());
+    Fc.add(fcPointNumber - 1, forecast);
+    if(sliceSize + period < inputData.size()){
+      double actual = inputData.get(i).asDouble();
+      double err = Math.abs(forecast.asDouble() - actual);
+      forecastFitness.add(err / actual);
+    }
   }
 
   private double getSeasonalK(int i, int period) {

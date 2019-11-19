@@ -3,7 +3,9 @@ package com.meaf.apeps.calculations;
 public class Result {
   private final double alpha, beta, gamma;
   private final double mae, mse, rmse, msePerc;
-  Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc) {
+  private final double optimalFitMAE;
+
+  Result(double alpha, double beta, double gamma, double mae, double mse, double msePerc, double optimalFitMAE) {
     this.alpha = alpha; //коэффициент сглаживания ряда
     this.beta = beta; //коэффициент сглаживания тренда
     this.gamma = gamma; //коэффициент сглаживания сезонности
@@ -11,6 +13,8 @@ public class Result {
     this.mse = mse;
     this.msePerc = msePerc;
     this.rmse = Math.sqrt(mse);
+    double fitMAE = (1 - optimalFitMAE) * 100;
+    this.optimalFitMAE = fitMAE > 0 ? fitMAE : 0;
   }
 
   public double getAlpha() {
@@ -39,6 +43,10 @@ public class Result {
 
   public double getMsePerc() {
     return msePerc;
+  }
+
+  public double getOptimalFitMAE() {
+    return optimalFitMAE;
   }
 }
 
