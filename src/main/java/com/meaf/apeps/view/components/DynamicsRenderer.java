@@ -14,10 +14,11 @@ public class DynamicsRenderer extends HtmlRenderer {
     if(val.isEmpty())
       return super.encode(" - ");
 
-    String[] nums = val.split(" ");
+    String[] data = val.split(" ");
 
-    double fc = Double.parseDouble(nums[0]);
-    double dynamics = fc - Double.parseDouble(nums[1]);
+    double fc = Double.parseDouble(data[0]);
+    double dynamics = fc - Double.parseDouble(data[1]);
+    String month = data[2];
 
     boolean isPositiveChange = dynamics > 0;
     String colorStyle =
@@ -27,11 +28,12 @@ public class DynamicsRenderer extends HtmlRenderer {
           : "#eb4335"
       );
 
-    String value = String.format("<span style=\"pointer-events: none;\">%s <small %s><b>%s%s</b></small></span>",
+    String value = String.format("<span style=\"pointer-events: none;\">%s <small %s><b>%s%s</b></small> %s</span>",
       Jsoup.clean(format(fc), Whitelist.basic()),
       colorStyle,
       isPositiveChange ? "+" : "",
-      Jsoup.clean(format(dynamics), Whitelist.basic())
+      Jsoup.clean(format(dynamics), Whitelist.basic()),
+      Jsoup.clean(month, Whitelist.basic())
     );
 
     return super.encode(value);

@@ -110,6 +110,10 @@ public class HoltWinters {
     return result;
   }
 
+  public List<DatedValue> getFcTail() {
+    return Fc;
+  }
+
   public DatedValue getNearestForecast() {
     return Fc.iterator().next();
   }

@@ -6,7 +6,6 @@ import org.hibernate.annotations.Formula;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.text.DecimalFormat;
 
 import static com.meaf.apeps.utils.Formatter.format;
 
@@ -226,13 +225,15 @@ public class Model extends ABaseEntity {
   }
 
   public String getWindForecastCell() {
-    return windSpeedForecast == null || windSpeedLast == null
-        ? "" : format(windSpeedForecast) + " " + format(windSpeedLast);
+    return windSpeedForecast == null || windSpeedLast == null || date_w == null
+        ? ""
+        : format(windSpeedForecast) + " " + format(windSpeedLast) + " (" + Formatter.nameMonth(date_w) + ")";
   }
 
   public String getSolarForecastCell() {
-    return ghiForecast == null || ghiLast == null
-        ? "" : format(ghiForecast) + " " + format(ghiLast);
+    return ghiForecast == null || ghiLast == null || date_s == null
+        ? ""
+        : format(ghiForecast) + " " + format(ghiLast) + " (" + Formatter.nameMonth(date_s) + ")";
   }
 
 

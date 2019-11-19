@@ -402,7 +402,7 @@ public class ModelContent extends ABaseContent {
       modelBean.getModel().setAlpha_s(new BigDecimal(lhCoefficients.getAlpha()));
       modelBean.getModel().setBeta_s(new BigDecimal(lhCoefficients.getBeta()));
       modelBean.getModel().setGamma_s(new BigDecimal(lhCoefficients.getGamma()));
-      modelBean.getModel().setDate_s(DateUtils.asSqlDate(method.getLastActualData().getDate()));
+      modelBean.getModel().setDate_s(DateUtils.asSqlDate(method.getFcTail().get(0).getDate()));
     } else {
       modelBean.getModel().setWindSpeedForecast(method.getNearestForecast().asDouble());
       modelBean.getModel().setMseWind(new BigDecimal(tfMSE.getValue()).setScale(5, BigDecimal.ROUND_HALF_UP));
@@ -410,7 +410,7 @@ public class ModelContent extends ABaseContent {
       modelBean.getModel().setAlpha_w(new BigDecimal(lhCoefficients.getAlpha()));
       modelBean.getModel().setBeta_w(new BigDecimal(lhCoefficients.getBeta()));
       modelBean.getModel().setGamma_w(new BigDecimal(lhCoefficients.getGamma()));
-      modelBean.getModel().setDate_w(DateUtils.asSqlDate(method.getLastActualData().getDate()));
+      modelBean.getModel().setDate_w(DateUtils.asSqlDate(method.getFcTail().get(0).getDate()));
     }
     modelBean.saveCurrentModel();
 
