@@ -6,7 +6,7 @@ import java.util.function.Function;
 
 public enum ETargetValues {
   WIND("m/s", WeatherStateData::getWindSpeed),
-  SOLAR("W/m²", WeatherStateData::getGhi);
+  SOLAR("Wh/m²", WeatherStateData::getGhi);
 
   public final String units;
   public final Function<WeatherStateData, Number> mapper;
