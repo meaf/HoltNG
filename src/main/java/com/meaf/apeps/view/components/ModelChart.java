@@ -21,6 +21,8 @@ public class ModelChart extends AbstractVaadinChartExample {
   private List<DatedValue> input = new ArrayList<>();
   private List<DatedValue> smoothed = new ArrayList<>();
   private List<DatedValue> model = new ArrayList<>();
+  private List<DatedValue> seasonal = new ArrayList<>();
+  private List<DatedValue> trend = new ArrayList<>();
   private Consumer<Date> click;
 
   public ModelChart(HoltWinters method) {
@@ -30,6 +32,8 @@ public class ModelChart extends AbstractVaadinChartExample {
     this.input = method.getInputData();
     this.smoothed = method.getSmoothedData();
     this.model = method.getFcData();
+    this.seasonal = method.getSeasonalCoeficients();
+    this.trend = method.getTrend();
     this.targetType = method.getTargetType();
   }
 
@@ -83,18 +87,28 @@ public class ModelChart extends AbstractVaadinChartExample {
     DataSeries input = new DataSeries();
     fillDataSeries(this.input, input);
     input.setName("Input");
-    configuration.addSeries(input);
 
     DataSeries smoothed = new DataSeries();
-
     smoothed.setName("Smoothed");
     fillDataSeries(this.smoothed, smoothed);
-    configuration.addSeries(smoothed);
 
     DataSeries model = new DataSeries();
     model.setName("Model");
     fillDataSeries(this.model, model);
+
+    DataSeries seasonal = new DataSeries();
+    seasonal.setName("Seasonal");
+    fillDataSeries(this.seasonal, seasonal);
+
+    DataSeries trend = new DataSeries();
+    trend.setName("Trend");
+    fillDataSeries(this.trend, trend);
+
+    configuration.addSeries(input);
+    configuration.addSeries(smoothed);
     configuration.addSeries(model);
+//    configuration.addSeries(seasonal);
+//    configuration.addSeries(trend);
 
     chart.drawChart(configuration);
 

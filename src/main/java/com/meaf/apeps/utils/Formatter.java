@@ -6,7 +6,7 @@ import java.util.Date;
 
 public class Formatter {
   private static DecimalFormat df = new DecimalFormat("#.##");
-  private static SimpleDateFormat sdf = new SimpleDateFormat("MMM");
+  private static SimpleDateFormat sdf = new SimpleDateFormat("MMM yyyy");
 
   public static String format(Number number) {
     if(number instanceof Integer || number instanceof Long)

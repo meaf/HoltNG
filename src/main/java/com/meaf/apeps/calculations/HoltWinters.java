@@ -125,6 +125,14 @@ public class HoltWinters {
     return Lt;
   }
 
+  public List<DatedValue> getSeasonalCoeficients() {
+    return Sts;
+  }
+
+  public List<DatedValue> getTrend() {
+    return Tt;
+  }
+
   public List<DatedValue> getFcData() {
     List<DatedValue> result = new ArrayList<>();
     result.addAll(FcEstimated);
