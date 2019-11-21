@@ -95,7 +95,6 @@ public class ModelChart extends AbstractVaadinChartExample {
     DataSeries model = new DataSeries();
     model.setName("Model");
     fillDataSeries(this.model, model);
-
     DataSeries seasonal = new DataSeries();
     seasonal.setName("Seasonal");
     fillDataSeries(this.seasonal, seasonal);

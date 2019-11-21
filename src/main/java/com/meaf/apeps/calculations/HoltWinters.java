@@ -213,7 +213,10 @@ public class HoltWinters {
     int lastSequenceValueInd = sliceSize - 1;
     int fcPointNumber = i - sliceSize + 1;
     Date lastDate = S.get(lastSequenceValueInd).getDate();
-    LocalDate date = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(fcPointNumber);
+    LocalDate date = new Date(lastDate.getTime()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    date = getDateInterval() == EDateInterval.MONTHLY
+        ? date.plusMonths(fcPointNumber)
+        : date.plusDays(fcPointNumber);
 
 
     DatedValue forecast = new DatedValue(date, (Lt.get(lastSequenceValueInd).asDouble() + Tt.get(lastSequenceValueInd).asDouble() * fcPointNumber) * Sts.get(i - period).asDouble());
